@@ -59,7 +59,7 @@
     </form>
 
     <script>
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyy-69fB1WvTh7Ag8emGd3G81_C1gawWaXGfmPEtIWfpoib6_9fYQ9FNQVvDtVjRS5exA/exec"; // あなたのGASのWebアプリURL
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyCznrpkRJqJbgIAChgOi-0lEfntKRfMUwRov0bpOMf5wr_U7iC9IAEBqopYPsFLkcB/exec"; // あなたのGASのWebアプリURL
         let userId = "TEST_USER"; // 開発テスト用初期値
 
         // 出金・入金のプルダウン選択肢
@@ -122,9 +122,10 @@
         }
 
         // フォーム送信（POSTリクエスト）
+        // フォーム送信（エラー判定・ポップアップ表示版）
         document.getElementById('cashForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+    
             const formData = {
                 userId: userId,
                 date: document.getElementById('date').value,
@@ -134,18 +135,35 @@
                 remarks: document.getElementById('remarks').value
             };
 
+            const params = new URLSearchParams();
+            Object.keys(formData).forEach(key => params.append(key, formData[key]));
+
+            // ボタンを連打できないように無効化
+            const btn = document.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = "送信中...";
+
             fetch(GAS_WEBAPP_URL, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
+                body: params
             })
-            .then(() => {
-                alert("登録が完了しました！");
-                liff.closeWindow();
+            .then(res => res.json()) // GASからの返却値をJSONとしてパースする
+            .then(resData => {
+                if (resData.status === "success") {
+                    alert("スプレッドシートへの登録が完了しました！");
+                    liff.closeWindow();
+                } else {
+                    // ★GAS側でエラーが発生していた場合、ここに飛びます
+                    alert("【GAS内部エラー】\n" + resData.message);
+                    btn.disabled = false;
+                    btn.textContent = "スプレッドシートへ登録";
+                }
             })
             .catch(error => {
-                alert("送信エラーが発生しました: " + error);
+                // 通信自体が失敗した場合
+                alert("【通信エラー】\nGASにデータが届きませんでした。URLを確認してください。");
+                btn.disabled = false;
+                btn.textContent = "スプレッドシートへ登録";
             });
         });
     </script>
