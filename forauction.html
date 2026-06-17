@@ -46,7 +46,7 @@
         <div class="upload-trigger-btn" onclick="document.getElementById('bulkFiles').click()">
             📸 画像を選択（最大6枚）
         </div>
-        <input type="file" id="bulkFiles" accept="image/*" multiple style="display: none;" onchange="handleFileSelect(this)">
+       <input type="file" id="bulkFiles" accept="image/*" multiple style="display: none;" onclick="clearAllPreviousState()" onchange="handleFileSelect(this)">
 
         <div class="image-grid">
             <div class="image-upload-box" id="box1"><div class="icon">📷</div></div>
