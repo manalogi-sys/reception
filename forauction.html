@@ -207,7 +207,10 @@ async function startAnalysis() {
     loading.style.display = 'block';
     resultBox.style.display = 'none';
     
-    document.getElementById('loading-text').innerText = "画像データを最適化...\nAIが分析しています（約15〜20秒）";
+    document.getElementById('loading-text').innerText = "AIが分析しています（約25〜30秒）";
+    
+    // 🔥【大修正】GASへの送信を待たずに、ボタンを押した「この瞬間」から20秒タイマーを裏で動かし始める！
+    checkResultInterval();
     
     try {
         const filesToSend = [];
@@ -224,6 +227,7 @@ async function startAnalysis() {
         };
         const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
         
+        // GASへの送信を実行（awaitしているので、ここ自体は30秒かかります）
         try {
             await fetch(GAS_SATEI_URL, {
                 method: 'POST',
@@ -234,7 +238,7 @@ async function startAnalysis() {
             console.log("データ送信完了");
         }
         
-        checkResultInterval();
+        // 💡「checkResultInterval();」は一番上に引っ越したため、ここでは呼び出しません。
         
     } catch (error) {
         alert('エラーが発生しました: ' + error.toString());
