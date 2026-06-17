@@ -249,15 +249,20 @@ async function startAnalysis() {
 
 function checkResultInterval() {
     let attemptCount = 0;
-    // GASの処理（25秒）の直前である「20秒後」までじっとパワーを溜める
-    setTimeout(() => {
-        const interval = setInterval(async () => {
+    
+    // 前回の残りカスがあれば念のためここでも消す
+    if (resultCheckTimer !== null) { clearInterval(resultCheckTimer); resultCheckTimer = null; }
+    if (subTimeoutId !== null) { clearTimeout(subTimeoutId); subTimeoutId = null; }
+
+    // 💡 頭に「subTimeoutId = 」をつけました。これで大掃除関数からこのタイマーを消去できます。
+    subTimeoutId = setTimeout(() => {
+        resultCheckTimer = setInterval(async () => {
             attemptCount++;
             
-            // 1秒おきに確認するため、最大180回（3分間）連打を継続
             if (attemptCount > 180) { 
-                clearInterval(interval);
-                alert("AIの解析に時間がかかっています。裏で処理は続いていますので、スプレッドシートをご確認いただくか、少し待ってから再度お試しください。");
+                clearInterval(resultCheckTimer);
+                resultCheckTimer = null;
+                alert("タイムアウトしました。");
                 document.getElementById('submitBtn').disabled = false;
                 document.getElementById('loading').style.display = 'none';
                 return;
@@ -268,34 +273,24 @@ function checkResultInterval() {
                 const result = await response.json();
                 
                 if (result.status === "success") {
-                    clearInterval(interval); // 成功したら連打をストップ！
+                    clearInterval(resultCheckTimer);
+                    resultCheckTimer = null;
                     
+                    // (以下、画面へのデータ反映処理はそのまま同一です)
                     document.getElementById('res-name').innerText = result.productName;
                     document.getElementById('res-purchase-advice').innerText = result.purchase_advice;
                     document.getElementById('res-price').innerText = result.price_range;
                     document.getElementById('res-stars').innerText = result.starRating;
                     document.getElementById('res-yahoo-advice').innerText = result.yahoo_advice;
-                    
                     const mBtn = document.getElementById('marketBtn');
-                    if (result.searchUrl) {
-                        mBtn.href = result.searchUrl;
-                        mBtn.style.display = 'block';
-                    } else {
-                        mBtn.style.display = 'none';
-                    }
-                    
+                    if (result.searchUrl) { mBtn.href = result.searchUrl; mBtn.style.display = 'block'; } else { mBtn.style.display = 'none'; }
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('submitBtn').disabled = false;
-                    
-                    const rBox = document.getElementById('result-box');
-                    rBox.style.display = 'block';
-                    rBox.scrollIntoView({ behavior: 'smooth' });
+                    const rBox = document.getElementById('result-box'); rBox.style.display = 'block'; rBox.scrollIntoView({ behavior: 'smooth' });
                 }
-            } catch (e) {
-                console.log("確認中... (GAS応答待ち)");
-            }
-        }, 1000); // 💡 ここを「1000（1秒ごと）」の超高速チェックに変更！
-    }, 20000); // 💡 最初の潜伏期間を「20秒（20000）」に設定。GASの邪魔をしません。
+            } catch (e) { console.log("応答待ち..."); }
+        }, 1000);
+    }, 20000);
 }
 </script>
 
