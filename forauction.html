@@ -245,49 +245,53 @@ async function startAnalysis() {
 
 function checkResultInterval() {
     let attemptCount = 0;
-    const interval = setInterval(async () => {
-        attemptCount++;
-        if (attemptCount > 40) { // 統合プロンプトの処理時間を考慮し、少し長めに設定
-            clearInterval(interval);
-            alert("タイムアウトしました。スプレッドシートをご確認ください。");
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('loading').style.display = 'none';
-            return;
-        }
-
-        try {
-            const response = await fetch(GAS_SATEI_URL + "?check=true");
-            const result = await response.json();
+    // 最低でも25秒はかかるため、最初の確認を「25秒後」までじっと待つ（超・安全対策）
+    setTimeout(() => {
+        const interval = setInterval(async () => {
+            attemptCount++;
             
-            if (result.status === "success") {
+            // 最大100回（25秒 ＋ 300秒 ＝ 約5分半）まで粘り強く待つ
+            if (attemptCount > 100) { 
                 clearInterval(interval);
-                
-                // 新しいキー構造に合わせてデータを流し込み
-                document.getElementById('res-name').innerText = result.productName;
-                document.getElementById('res-purchase-advice').innerText = result.purchase_advice; // 買取専門店向け
-                document.getElementById('res-price').innerText = result.price_range;
-                document.getElementById('res-stars').innerText = result.starRating;
-                document.getElementById('res-yahoo-advice').innerText = result.yahoo_advice;       // ヤフオク用
-                
-                const mBtn = document.getElementById('marketBtn');
-                if (result.searchUrl) {
-                    mBtn.href = result.searchUrl;
-                    mBtn.style.display = 'block';
-                } else {
-                    mBtn.style.display = 'none';
-                }
-                
-                document.getElementById('loading').style.display = 'none';
+                alert("AIの解析に時間がかかっています。処理は裏で継続されていますので、1〜2分後に再度結果画面を開き直すか、スプレッドシートをご確認ください。");
                 document.getElementById('submitBtn').disabled = false;
-                
-                const rBox = document.getElementById('result-box');
-                rBox.style.display = 'block';
-                rBox.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('loading').style.display = 'none';
+                return;
             }
-        } catch (e) {
-            // エラー時は次をトライ
-        }
-    }, 3000);
+
+            try {
+                const response = await fetch(GAS_SATEI_URL + "?check=true");
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    clearInterval(interval);
+                    
+                    document.getElementById('res-name').innerText = result.productName;
+                    document.getElementById('res-purchase-advice').innerText = result.purchase_advice;
+                    document.getElementById('res-price').innerText = result.price_range;
+                    document.getElementById('res-stars').innerText = result.starRating;
+                    document.getElementById('res-yahoo-advice').innerText = result.yahoo_advice;
+                    
+                    const mBtn = document.getElementById('marketBtn');
+                    if (result.searchUrl) {
+                        mBtn.href = result.searchUrl;
+                        mBtn.style.display = 'block';
+                    } else {
+                        mBtn.style.display = 'none';
+                    }
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
+                    
+                    const rBox = document.getElementById('result-box');
+                    rBox.style.display = 'block';
+                    rBox.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (e) {
+                console.log("確認中... (GAS応答待ち)");
+            }
+        }, 3000); // 3秒ごとにチェック
+    }, 25000); // 💡 ここを 15000 から 25000 (25秒) に変更しました！
 }
 </script>
 
