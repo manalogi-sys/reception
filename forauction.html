@@ -108,9 +108,11 @@
 // ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
 const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbzU4uDNbibUmAAI8SjBPt3Zfus_y1-s2IWNUQJb7Ryf2hPWUVlDZhk_nu1n76_54aVL/exec";
 
-// 🔒 LINE IDを保持する領域
+// 🔒 各種データを保持する領域（★ここにタイマー用の宣言を正しく追加しました）
 let globalLineId = null;
 let selectedFilesArray = [];
+let resultCheckTimer = null;
+let subTimeoutId = null;
 
 // ✨ 画面起動時に裏側で自動的にLINE IDを取得完了させておく安全な初期化
 window.onload = function() {
@@ -131,6 +133,37 @@ window.onload = function() {
             alert("LINE初期化エラー: " + err.toString());
         });
 };
+
+// 🧼 画像選択ボタンが押された瞬間に、裏のゾンビタイマーと画面表示を大掃除する完璧な安全装置
+function clearAllPreviousState() {
+    console.log("【完全初期化】別件の解析に向けて、裏のタイマーと画面表示をすべて大掃除します。");
+
+    // 1. 裏で動いている1秒連打タイマーを完全に消去
+    if (resultCheckTimer !== null) {
+        clearInterval(resultCheckTimer);
+        resultCheckTimer = null;
+    }
+    // 2. もし「20秒待機中」のタイマーが残っていたら、それも強制キャンセル
+    if (subTimeoutId !== null) {
+        clearTimeout(subTimeoutId);
+        subTimeoutId = null;
+    }
+
+    // 3. 画面の表示（前回の査定結果）をすべて空っぽにする
+    document.getElementById('res-name').innerText = "-";
+    document.getElementById('res-purchase-advice').innerText = "-";
+    document.getElementById('res-price').innerText = "-";
+    document.getElementById('res-stars').innerText = "-";
+    document.getElementById('res-yahoo-advice').innerText = "-";
+    
+    // 4. ヤフオクボタンや結果ボックス、ローディング表示も全部隠す（初期状態に戻す）
+    document.getElementById('marketBtn').style.display = 'none';
+    document.getElementById('result-box').style.display = 'none';
+    document.getElementById('loading').style.display = 'none';
+    
+    // 5. 送信ボタンをもう一度押せる状態に戻しておく
+    document.getElementById('submitBtn').disabled = false;
+}
 
 function handleFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
@@ -209,7 +242,7 @@ async function startAnalysis() {
     
     document.getElementById('loading-text').innerText = "AIが分析しています（約25〜30秒）";
     
-    // 🔥【大修正】GASへの送信を待たずに、ボタンを押した「この瞬間」から20秒タイマーを裏で動かし始める！
+    // GASへの送信を待たずに、ボタンを押した「この瞬間」から20秒タイマーを裏で動かし始める！
     checkResultInterval();
     
     try {
@@ -227,7 +260,6 @@ async function startAnalysis() {
         };
         const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
         
-        // GASへの送信を実行（awaitしているので、ここ自体は30秒かかります）
         try {
             await fetch(GAS_SATEI_URL, {
                 method: 'POST',
@@ -237,8 +269,6 @@ async function startAnalysis() {
         } catch (postError) {
             console.log("データ送信完了");
         }
-        
-        // 💡「checkResultInterval();」は一番上に引っ越したため、ここでは呼び出しません。
         
     } catch (error) {
         alert('エラーが発生しました: ' + error.toString());
@@ -250,11 +280,9 @@ async function startAnalysis() {
 function checkResultInterval() {
     let attemptCount = 0;
     
-    // 前回の残りカスがあれば念のためここでも消す
     if (resultCheckTimer !== null) { clearInterval(resultCheckTimer); resultCheckTimer = null; }
     if (subTimeoutId !== null) { clearTimeout(subTimeoutId); subTimeoutId = null; }
 
-    // 💡 頭に「subTimeoutId = 」をつけました。これで大掃除関数からこのタイマーを消去できます。
     subTimeoutId = setTimeout(() => {
         resultCheckTimer = setInterval(async () => {
             attemptCount++;
@@ -276,16 +304,18 @@ function checkResultInterval() {
                     clearInterval(resultCheckTimer);
                     resultCheckTimer = null;
                     
-                    // (以下、画面へのデータ反映処理はそのまま同一です)
                     document.getElementById('res-name').innerText = result.productName;
                     document.getElementById('res-purchase-advice').innerText = result.purchase_advice;
                     document.getElementById('res-price').innerText = result.price_range;
                     document.getElementById('res-stars').innerText = result.starRating;
                     document.getElementById('res-yahoo-advice').innerText = result.yahoo_advice;
+                    
                     const mBtn = document.getElementById('marketBtn');
                     if (result.searchUrl) { mBtn.href = result.searchUrl; mBtn.style.display = 'block'; } else { mBtn.style.display = 'none'; }
+                    
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('submitBtn').disabled = false;
+                    
                     const rBox = document.getElementById('result-box'); rBox.style.display = 'block'; rBox.scrollIntoView({ behavior: 'smooth' });
                 }
             } catch (e) { console.log("応答待ち..."); }
@@ -293,6 +323,5 @@ function checkResultInterval() {
     }, 20000);
 }
 </script>
-
 </body>
 </html>
