@@ -245,13 +245,13 @@ async function startAnalysis() {
 
 function checkResultInterval() {
     let attemptCount = 0;
-    // 順番入れ替えでGASのデータ準備が早くなったため、潜伏を「10秒」に短縮して最速を狙う！
+    // GASの処理（25秒）の直前である「20秒後」までじっとパワーを溜める
     setTimeout(() => {
         const interval = setInterval(async () => {
             attemptCount++;
             
-            // 最大60回（10秒 ＋ 300秒 ＝ 5分以上）粘り強く待つ
-            if (attemptCount > 60) { 
+            // 1秒おきに確認するため、最大180回（3分間）連打を継続
+            if (attemptCount > 180) { 
                 clearInterval(interval);
                 alert("AIの解析に時間がかかっています。裏で処理は続いていますので、スプレッドシートをご確認いただくか、少し待ってから再度お試しください。");
                 document.getElementById('submitBtn').disabled = false;
@@ -264,7 +264,7 @@ function checkResultInterval() {
                 const result = await response.json();
                 
                 if (result.status === "success") {
-                    clearInterval(interval);
+                    clearInterval(interval); // 成功したら連打をストップ！
                     
                     document.getElementById('res-name').innerText = result.productName;
                     document.getElementById('res-purchase-advice').innerText = result.purchase_advice;
@@ -290,8 +290,8 @@ function checkResultInterval() {
             } catch (e) {
                 console.log("確認中... (GAS応答待ち)");
             }
-        }, 5000); // 💡 チェックの間隔を3秒から「5秒ごと」にしてサーバーの負担を軽減
-    }, 10000); // 💡 最初の潜伏期間を25秒から「10秒」に短縮！
+        }, 1000); // 💡 ここを「1000（1秒ごと）」の超高速チェックに変更！
+    }, 20000); // 💡 最初の潜伏期間を「20秒（20000）」に設定。GASの邪魔をしません。
 }
 </script>
 
