@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ヤフオク商品分析</title>
+    <title>商品分析・査定サポート</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; padding: 15px; color: #333; margin: 0; }
@@ -28,9 +28,9 @@
         #result-box { display: none; margin-top: 25px; padding: 20px; background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .result-title { font-size: 18px; font-weight: bold; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; }
-        .result-item { margin-bottom: 15px; }
-        .result-label { font-size: 12px; color: #718096; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-        .result-value { font-size: 16px; color: #1a202c; font-weight: 500; }
+        .result-item { margin-bottom: 18px; }
+        .result-label { font-size: 12px; color: #4a5568; font-weight: bold; background: #edf2f7; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+        .result-value { font-size: 15px; color: #1a202c; font-weight: 500; line-height: 1.6; white-space: pre-wrap; }
         .price-highlight { font-size: 22px; color: #e53e3e; font-weight: bold; }
         .stars { font-size: 20px; color: #ecc94b; }
         #marketBtn { display: block; width: 100%; text-align: center; box-sizing: border-box; background-color: #38a169; color: white; text-decoration: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; margin-top: 15px; transition: background 0.2s; }
@@ -40,7 +40,7 @@
 <body>
 
 <div class="container">
-    <h2>ヤフオク商品分析</h2>
+    <h2>商品分析・査定サポート</h2>
     
     <div class="form-group">
         <div class="upload-trigger-btn" onclick="document.getElementById('bulkFiles').click()">
@@ -72,29 +72,41 @@
 
     <div id="result-box">
         <div class="result-title">📊 分析結果</div>
+        
         <div class="result-item">
             <div class="result-label">特定された商品名</div>
-            <div class="result-value" id="res-name">-</div>
+            <div class="result-value" id="res-name" style="font-weight: bold;">-</div>
         </div>
+
         <div class="result-item">
-            <div class="result-label">相場価格（詳細は下記リンクよりご確認ください）</div>
+            <div class="result-label" style="background-color: #feebc8; color: #c05621;">💡 買取専門店向けアドバイス</div>
+            <div class="result-value" id="res-purchase-advice">-</div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 20px 0;">
+
+        <div class="result-item">
+            <div class="result-label">ヤフオク落札相場予想価格帯</div>
             <div class="result-value price-highlight" id="res-price">-</div>
         </div>
+        
         <div class="result-item">
             <div class="result-label">ヤフオク出品オススメ度</div>
             <div class="result-value stars" id="res-stars">-</div>
         </div>
+        
         <div class="result-item">
-            <div class="result-label">アドバイス</div>
-            <div class="result-value" id="res-advice" style="line-height: 1.5; font-size: 14px; white-space: pre-wrap;">-</div>
+            <div class="result-label" style="background-color: #e9d8fd; color: #6b46c1;">🔨 ヤフオク出品アドバイス</div>
+            <div class="result-value" id="res-yahoo-advice">-</div>
         </div>
+        
         <a id="marketBtn" href="#" target="_blank">📊 ヤフオク落札相場を直接確認</a>
     </div>
 </div>
 
 <script>
 // ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
-const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbypPqmmBvPVvzd_MJGsf0PSzzu405PLsUHsQVYw_eYoDxNkYSUZp6lqtvWlmBGchpAp/exec";
+const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbzoHnCjCI5F2UsiFNS6fRKIj8Ktm9EIHb8KhRDFmi5ejs01UEQgcmZ1wzXVaMuywsXv/exec";
 
 // 🔒 LINE IDを保持する領域
 let globalLineId = null;
@@ -102,7 +114,7 @@ let selectedFilesArray = [];
 
 // ✨ 画面起動時に裏側で自動的にLINE IDを取得完了させておく安全な初期化
 window.onload = function() {
-    liff.init({ liffId: "2010292787-FQhvWvUm" }) // 受付と同じチャネルのLIFF IDを流用でOKです！
+    liff.init({ liffId: "2010292787-FQhvWvUm" })
         .then(() => {
             if (liff.isLoggedIn()) {
                 return liff.getProfile();
@@ -112,7 +124,7 @@ window.onload = function() {
         })
         .then(profile => {
             if (profile) {
-                globalLineId = profile.userId; // IDを事前にキープ
+                globalLineId = profile.userId;
             }
         })
         .catch(err => {
@@ -181,7 +193,6 @@ async function startAnalysis() {
         return;
     }
 
-    // 🔒 LINE IDの取得待ちストッパー
     if (!globalLineId) {
         alert('エラー: LINE IDを取得中です。一瞬待ってから再度お試しください。');
         return;
@@ -196,7 +207,7 @@ async function startAnalysis() {
     loading.style.display = 'block';
     resultBox.style.display = 'none';
     
-    document.getElementById('loading-text').innerText = "画像データを最適化...\nAIが分析しています。";
+    document.getElementById('loading-text').innerText = "画像データを最適化...\nAIが分析しています（約15〜20秒）";
     
     try {
         const filesToSend = [];
@@ -206,7 +217,6 @@ async function startAnalysis() {
             filesToSend.push({ image: b64, name: f.name });
         }
         
-        // 🔒 payloadに「lineId」をハメ込む修正を適用
         const payload = { 
             lineId: globalLineId, 
             comment: comment, 
@@ -237,7 +247,7 @@ function checkResultInterval() {
     let attemptCount = 0;
     const interval = setInterval(async () => {
         attemptCount++;
-        if (attemptCount > 30) {
+        if (attemptCount > 40) { // 統合プロンプトの処理時間を考慮し、少し長めに設定
             clearInterval(interval);
             alert("タイムアウトしました。スプレッドシートをご確認ください。");
             document.getElementById('submitBtn').disabled = false;
@@ -252,10 +262,12 @@ function checkResultInterval() {
             if (result.status === "success") {
                 clearInterval(interval);
                 
+                // 新しいキー構造に合わせてデータを流し込み
                 document.getElementById('res-name').innerText = result.productName;
+                document.getElementById('res-purchase-advice').innerText = result.purchase_advice; // 買取専門店向け
                 document.getElementById('res-price').innerText = result.price_range;
                 document.getElementById('res-stars').innerText = result.starRating;
-                document.getElementById('res-advice').innerText = result.advice;
+                document.getElementById('res-yahoo-advice').innerText = result.yahoo_advice;       // ヤフオク用
                 
                 const mBtn = document.getElementById('marketBtn');
                 if (result.searchUrl) {
