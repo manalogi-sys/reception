@@ -245,15 +245,15 @@ async function startAnalysis() {
 
 function checkResultInterval() {
     let attemptCount = 0;
-    // 最低でも25秒はかかるため、最初の確認を「25秒後」までじっと待つ（超・安全対策）
+    // 順番入れ替えでGASのデータ準備が早くなったため、潜伏を「10秒」に短縮して最速を狙う！
     setTimeout(() => {
         const interval = setInterval(async () => {
             attemptCount++;
             
-            // 最大100回（25秒 ＋ 300秒 ＝ 約5分半）まで粘り強く待つ
-            if (attemptCount > 100) { 
+            // 最大60回（10秒 ＋ 300秒 ＝ 5分以上）粘り強く待つ
+            if (attemptCount > 60) { 
                 clearInterval(interval);
-                alert("AIの解析に時間がかかっています。処理は裏で継続されていますので、1〜2分後に再度結果画面を開き直すか、スプレッドシートをご確認ください。");
+                alert("AIの解析に時間がかかっています。裏で処理は続いていますので、スプレッドシートをご確認いただくか、少し待ってから再度お試しください。");
                 document.getElementById('submitBtn').disabled = false;
                 document.getElementById('loading').style.display = 'none';
                 return;
@@ -290,8 +290,8 @@ function checkResultInterval() {
             } catch (e) {
                 console.log("確認中... (GAS応答待ち)");
             }
-        }, 3000); // 3秒ごとにチェック
-    }, 25000); // 💡 ここを 15000 から 25000 (25秒) に変更しました！
+        }, 5000); // 💡 チェックの間隔を3秒から「5秒ごと」にしてサーバーの負担を軽減
+    }, 10000); // 💡 最初の潜伏期間を25秒から「10秒」に短縮！
 }
 </script>
 
