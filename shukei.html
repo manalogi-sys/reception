@@ -3,60 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>来客データ集計</title>
+  <title>来客データ状況ダッシュボード</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; background-color: #f8f9fa; }
-    .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .form-group { margin-bottom: 15px; }
-    label { font-weight: bold; display: block; margin-bottom: 5px; }
-    input[type="date"], button { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 4px; font-size: 16px; }
-    button { background-color: #06C755; color: white; border: none; font-weight: bold; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
+    .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
+    h3 { margin-top: 0; font-size: 18px; color: #111827; border-left: 4px solid #10b981; padding-left: 8px; }
+    .form-group { margin-bottom: 12px; }
+    input[type="date"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #f9fafb; }
+    button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    button:hover { background-color: #059669; }
     .hidden { display: none; }
+
+    /* かっこいい表（KPIテーブル）のスタイル */
+    .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 12px 10px; font-size: 14px; text-align: left; font-weight: 600; }
+    .kpi-table td { padding: 14px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 15px; }
+    .kpi-table tr:last-child td { border-bottom: none; }
+    .kpi-table tr:nth-child(even) td { background-color: #f9fafb; }
+    .num-col { text-align: right; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; font-size: 16px; color: #111827; }
+    .highlight-row td { background-color: #ecfdf5 !important; color: #065f46; }
+    .highlight-row .num-col { color: #059669; font-size: 18px; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h3>📅 期間指定（LINE専用テスト）</h3>
-    <div class="form-group">
-      <label>開始日</label>
-      <input type="date" id="startDate">
-    </div>
-    <div class="form-group">
-      <label>終了日</label>
-      <input type="date" id="endDate">
-    </div>
+    <h3>📅 期間指定</h3>
+    <div class="form-group"><input type="date" id="startDate"></div>
+    <div class="form-group"><input type="date" id="endDate"></div>
     <button onclick="fetchData()">集計を実行</button>
   </div>
 
   <div id="results" class="card hidden">
-    <h3>📊 集計結果</h3>
-    <p style="font-size: 20px;">指定期間の総来客数: <strong><span id="totalNum">0</span> 件</strong></p>
+    <h3>📊 パフォーマンスサマリー</h3>
+    
+    <table class="kpi-table">
+      <thead>
+        <tr>
+          <th>集計指標</th>
+          <th style="text-align: right; width: 45%;">実績値</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>来客数</td><td class="num-col" id="lbl-total">0 件</td></tr>
+        <tr><td>成約数</td><td class="num-col" id="lbl-seiyaku">0 件</td></tr>
+        <tr><td>成約率</td><td class="num-col" id="lbl-rate" style="color: #2563eb;">0.0 %</td></tr>
+        <tr><td>買取総額</td><td class="num-col" id="lbl-kaitori">¥0</td></tr>
+        <tr><td>買取客単価</td><td class="num-col" id="lbl-tanka">¥0</td></tr>
+        <tr><td>予想卸総額</td><td class="num-col" id="lbl-oroshi">¥0</td></tr>
+        <tr class="highlight-row"><td>見込粗利額</td><td class="num-col" id="lbl-arari">¥0</td></tr>
+        <tr><td>見込粗利率</td><td class="num-col" id="lbl-arari-rate" style="color: #059669;">0.0 %</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbySEoTKoWSSq-siud9lbwMDWbajIZEI_XPMI2mIbXmALvKUCGTdIc8NAk4r-fFoEI15MQ/exec"; // あなたのGAS WebアプリURL
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx6lgQmLx1rPKxKGejgDKFf7P6swAxBLP089eQFIGfvflqzeeKWBMhZ1gyObRPuN9uAuw/exec"; // あなたのGAS WebアプリURL
     let userId = "";
 
-    // 起動時にLIFFでLINE IDを強制取得
     document.addEventListener("DOMContentLoaded", () => {
       liff.init({ liffId: "2010292787-uHHgSxXo" }) // あなたのLIFF ID
         .then(() => {
-          if (!liff.isLoggedIn()) {
-            liff.login();
-          } else {
-            liff.getProfile().then(profile => {
-              userId = profile.userId;
-            });
-          }
+          if (!liff.isLoggedIn()) { liff.login(); }
+          else { liff.getProfile().then(profile => { userId = profile.userId; }); }
         }).catch(err => alert("LIFF初期化エラー: " + err));
     });
 
     function fetchData() {
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
-      
       if (!start || !end) { alert('期間を選択してください。'); return; }
       if (!userId) { alert('LINEユーザー情報を取得中です。しばらく待ってから再度押してください。'); return; }
 
@@ -64,11 +80,44 @@
         .then(res => res.json())
         .then(data => {
           if (data.error) { alert(data.error); return; }
-          
-          // 結果を表示
-          document.getElementById('results').classList.remove('hidden');
-          document.getElementById('totalNum').innerText = data.total;
+          calculateAndRender(data);
         }).catch(err => alert("通信エラー: " + err));
+    }
+
+    function calculateAndRender(data) {
+      // 1. 各数値をJavaScript側で計算・整形
+      const total = data.total;
+      const seiyaku = data.seiyaku;
+      const kaitori = data.kaitori;
+      const oroshi = data.oroshi;
+
+      // 成約率 (%) = 成約数 / 来客数
+      const seiyakuRate = total > 0 ? ((seiyaku / total) * 100).toFixed(1) : "0.0";
+      
+      // 買取客単価 = 買取総額 / 成約数
+      const tanka = seiyaku > 0 ? Math.round(kaitori / seiyaku) : 0;
+      
+      // 見込粗利額 = 予想卸総額 - 買取総額
+      const arari = oroshi - kaitori;
+      
+      // 見込粗利率 (%) = 見込粗利額 / 予想卸総額
+      const arariRate = oroshi > 0 ? ((arari / oroshi) * 100).toFixed(1) : "0.0";
+
+      // 2. 通貨フォーマット関数
+      const fmt = (num) => "¥" + num.toLocaleString();
+
+      // 3. 画面の各要素に値をセット
+      document.getElementById('lbl-total').innerText = total.toLocaleString() + " 件";
+      document.getElementById('lbl-seiyaku').innerText = seiyaku.toLocaleString() + " 件";
+      document.getElementById('lbl-rate').innerText = seiyakuRate + " %";
+      document.getElementById('lbl-kaitori').innerText = fmt(kaitori);
+      document.getElementById('lbl-tanka').innerText = fmt(tanka);
+      document.getElementById('lbl-oroshi').innerText = fmt(oroshi);
+      document.getElementById('lbl-arari').innerText = fmt(arari);
+      document.getElementById('lbl-arari-rate').innerText = arariRate + " %";
+
+      // 表を表示
+      document.getElementById('results').classList.remove('hidden');
     }
   </script>
 </body>
