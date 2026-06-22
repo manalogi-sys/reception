@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>来客データ集計</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background-color: #f8f9fa; }
+    .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 15px; }
+    label { font-weight: bold; display: block; margin-bottom: 5px; }
+    input[type="date"], button { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 4px; font-size: 16px; }
+    button { background-color: #06C755; color: white; border: none; font-weight: bold; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h3>📅 期間指定（LINE専用テスト）</h3>
+    <div class="form-group">
+      <label>開始日</label>
+      <input type="date" id="startDate">
+    </div>
+    <div class="form-group">
+      <label>終了日</label>
+      <input type="date" id="endDate">
+    </div>
+    <button onclick="fetchData()">集計を実行</button>
+  </div>
+
+  <div id="results" class="card hidden">
+    <h3>📊 集計結果</h3>
+    <p style="font-size: 20px;">指定期間の総来客数: <strong><span id="totalNum">0</span> 件</strong></p>
+  </div>
+
+  <script>
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbySEoTKoWSSq-siud9lbwMDWbajIZEI_XPMI2mIbXmALvKUCGTdIc8NAk4r-fFoEI15MQ/exec"; // あなたのGAS WebアプリURL
+    let userId = "";
+
+    // 起動時にLIFFでLINE IDを強制取得
+    document.addEventListener("DOMContentLoaded", () => {
+      liff.init({ liffId: "2010292787-uHHgSxXo" }) // あなたのLIFF ID
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
+            liff.getProfile().then(profile => {
+              userId = profile.userId;
+            });
+          }
+        }).catch(err => alert("LIFF初期化エラー: " + err));
+    });
+
+    function fetchData() {
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      
+      if (!start || !end) { alert('期間を選択してください。'); return; }
+      if (!userId) { alert('LINEユーザー情報を取得中です。しばらく待ってから再度押してください。'); return; }
+
+      fetch(`${GAS_API_URL}?userId=${userId}&start=${start}&end=${end}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) { alert(data.error); return; }
+          
+          // 結果を表示
+          document.getElementById('results').classList.remove('hidden');
+          document.getElementById('totalNum').innerText = data.total;
+        }).catch(err => alert("通信エラー: " + err));
+    }
+  </script>
+</body>
+</html>
