@@ -5,16 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>来客データ状況ダッシュボード</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
     .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
     h3 { margin-top: 0; font-size: 18px; color: #111827; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 15px; }
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; } /* ★追加: ラベル用スタイル */
-    input[type="date"], select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #f9fafb; } /* ★変更: selectを追加 */
+    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; }
+    input[type="date"], select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #f9fafb; }
     button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     button:hover { background-color: #059669; }
     .hidden { display: none; }
+
+    /* 🗂️ チェックボックス全体のスタイル */
+    .checkbox-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+    .checkbox-item { display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .checkbox-item input { margin-right: 8px; transform: scale(1.1); cursor: pointer; }
+    .checkbox-item.disabled { opacity: 0.4; cursor: not-allowed; background: #e5e7eb; }
+
+    /* 📊 グラフエリアのスタイル */
+    .chart-box { max-width: 320px; margin: 20px auto 0 auto; }
 
     /* KPIテーブルスタイル */
     .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -64,14 +74,32 @@
 
     <div class="form-group">
       <label for="statusFilter">成約 or 不成約</label>
-      <select id="statusFilter">
+      <select id="statusFilter" onchange="toggleCheckboxes()">
         <option value="指定なし">指定なし（すべて）</option>
         <option value="成約">成約</option>
         <option value="不成約">不成約</option>
       </select>
     </div>
 
-    <button onclick="fetchData()">集計を実行</button>
+    <div class="form-group" style="margin-top: 20px;">
+      <label>📊 円グラフで構成比を表示する項目（1つ選択）</label>
+      <div class="checkbox-container">
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nyuten" onchange="handleCheckboxChange(this)">入店時間</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nendai" onchange="handleCheckboxChange(this)">年代</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="shokugyo" onchange="handleCheckboxChange(this)">職業</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="moki" onchange="handleCheckboxChange(this)">来店動機</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="hp" onchange="handleCheckboxChange(this)">HP詳細</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="hinshu" onchange="changeCheckbox(this)">査定品種別</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="soba" onchange="handleCheckboxChange(this)">相場感</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="aimitsumori" onchange="handleCheckboxChange(this)">相見積もり</label>
+        <label class="checkbox-item" id="item-status"><input type="checkbox" name="chartGroup" value="status" id="cb-status" onchange="handleCheckboxChange(this)">成約or不成約</label>
+        <label class="checkbox-item" id="item-riyu"><input type="checkbox" name="chartGroup" value="riyu" id="cb-riyu" onchange="handleCheckboxChange(this)">不成約理由</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="oroshisaki" onchange="handleCheckboxChange(this)">卸先</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="juho" onchange="handleCheckboxChange(this)">住所</label>
+      </div>
+    </div>
+
+    <button onclick="fetchData()" style="margin-top: 15px;">集計を実行</button>
   </div>
 
   <div id="results" class="card hidden">
@@ -79,10 +107,7 @@
     
     <table class="kpi-table">
       <thead>
-        <tr>
-          <th>集計指標</th>
-          <th style="text-align: right; width: 45%;">実績値</th>
-        </tr>
+        <tr><th>集計指標</th><th style="text-align: right; width: 45%;">実績値</th></tr>
       </thead>
       <tbody>
         <tr><td>来客数</td><td class="num-col" id="lbl-total">0 件</td></tr>
@@ -95,11 +120,17 @@
         <tr><td>見込粗利率</td><td class="num-col" id="lbl-arari-rate" style="color: #059669;">0.0 %</td></tr>
       </tbody>
     </table>
+
+    <div id="chartContainer" class="chart-box hidden">
+      <canvas id="myPieChart"></canvas>
+    </div>
   </div>
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycby2M7WR6IjPfdY-oRHJ6l_OkhElt5bBL4yJil8OVXilc53S_qQ99rtITfjfFea6jYLwFQ/exec";
     let userId = "";
+    let globalChartsData = null; // GASから返ってきたローデータを一時保存する箱
+    let currentChartInstance = null; // 現在表示しているグラフオブジェクト
 
     document.addEventListener("DOMContentLoaded", () => {
       liff.init({ liffId: "2010292787-uHHgSxXo" })
@@ -107,13 +138,56 @@
           if (!liff.isLoggedIn()) { liff.login(); }
           else { liff.getProfile().then(profile => { userId = profile.userId; }); }
         }).catch(err => alert("LIFF初期化エラー: " + err));
+      
+      toggleCheckboxes(); // 初期状態のチェックボックス制御
     });
+
+    // 🔒 フィルタ条件に応じてチェックボックスの有効・無効を切り替えるロジック
+    function toggleCheckboxes() {
+      const statusFilter = document.getElementById('statusFilter').value;
+      
+      const cbStatus = document.getElementById('cb-status');
+      const itemStatus = document.getElementById('item-status');
+      const cbRiyu = document.getElementById('cb-riyu');
+      const itemRiyu = document.getElementById('item-riyu');
+
+      // 1. 成約or不成約は「指定なし」の時だけ選択可
+      if (statusFilter === "指定なし") {
+        cbStatus.disabled = false;
+        itemStatus.classList.remove('disabled');
+      } else {
+        cbStatus.disabled = true;
+        cbStatus.checked = false;
+        itemStatus.classList.add('disabled');
+      }
+
+      // 2. 不成約理由は「成約」を選択した場合は選択不可
+      if (statusFilter === "成約") {
+        cbRiyu.disabled = true;
+        cbRiyu.checked = false;
+        itemRiyu.classList.add('disabled');
+      } else {
+        cbRiyu.disabled = false;
+        itemRiyu.classList.remove('disabled');
+      }
+    }
+
+    // 👆 単一選択（ラジオボタン風）にするためのチェックボックス制御
+    function handleCheckboxChange(clickedCb) {
+      if (clickedCb.checked) {
+        const checkboxes = document.getElementsByName('chartGroup');
+        checkboxes.forEach(cb => { if (cb !== clickedCb) cb.checked = false; });
+      }
+      // もしすでにデータがあれば、チェックを変えた瞬間にグラフを再描画する
+      if (globalChartsData) { renderPieChart(); }
+    }
+
+    // 後方互換性用のダミー（タイポ防止ガード）
+    function changeCheckbox(cb) { handleCheckboxChange(cb); }
 
     function fetchData() {
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
-      
-      // ★追加: 新しい選択ボックスの値を取得
       const staff = document.getElementById('staffFilter').value;
       const gender = document.getElementById('genderFilter').value;
       const status = document.getElementById('statusFilter').value;
@@ -121,7 +195,6 @@
       if (!start || !end) { alert('期間を選択してください。'); return; }
       if (!userId) { alert('LINEユーザー情報を取得中です。しばらく待ってから再度押してください。'); return; }
 
-      // ★変更: URLに新しい3つのパラメータを追加してGASに送信（encodeURIComponentで安全に処理）
       const url = `${GAS_API_URL}?userId=${userId}&start=${start}&end=${end}` + 
                   `&staff=${encodeURIComponent(staff)}` + 
                   `&gender=${encodeURIComponent(gender)}` + 
@@ -131,7 +204,9 @@
         .then(res => res.json())
         .then(data => {
           if (data.error) { alert(data.error); return; }
+          globalChartsData = data.charts; // グラフデータを保持
           calculateAndRender(data);
+          renderPieChart(); // グラフを描画
         }).catch(err => alert("通信エラー: " + err));
     }
 
@@ -158,6 +233,73 @@
       document.getElementById('lbl-arari-rate').innerText = arariRate + " %";
 
       document.getElementById('results').classList.remove('hidden');
+    }
+
+    // 🎨 動的に選ばれた項目の内訳を集計し、円グラフを描画するメインロジック
+    function renderPieChart() {
+      // 1. 現在どれがチェックされているか特定する
+      const checkboxes = document.getElementsByName('chartGroup');
+      let selectedKey = null;
+      let selectedLabel = "";
+
+      checkboxes.forEach(cb => {
+        if (cb.checked && !cb.disabled) {
+          selectedKey = cb.value;
+          selectedLabel = cb.parentNode.textContent.trim();
+        }
+      });
+
+      const container = document.getElementById('chartContainer');
+      
+      // 何もチェックされていなければグラフエリアを隠して終了
+      if (!selectedKey || !globalChartsData || !globalChartsData[selectedKey]) {
+        container.classList.add('hidden');
+        if (currentChartInstance) currentChartInstance.destroy();
+        return;
+      }
+
+      // 2. 配列のローデータ（例：["A", "B", "A"]）から件数を集計（オブジェクト化）
+      const rawArray = globalChartsData[selectedKey];
+      const counts = {};
+      rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
+
+      // 3. Chart.jsが読めるように「ラベルの配列」と「数値の配列」に分ける
+      const labels = Object.keys(counts);
+      const values = Object.values(counts);
+
+      if (labels.length === 0) {
+        container.classList.add('hidden');
+        if (currentChartInstance) currentChartInstance.destroy();
+        return;
+      }
+
+      container.classList.remove('hidden');
+
+      // 古いグラフが残っていれば破棄（バグ防止の重要処理）
+      if (currentChartInstance) { currentChartInstance.destroy(); }
+
+      // 4. 新しいグラフの描画
+      const ctx = document.getElementById('myPieChart').getContext('2d');
+      currentChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: [
+              '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+              '#ec4899', '#6b7280', '#14b8a6', '#f43f5e', '#a855f7'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            title: { display: true, text: `【${selectedLabel}】構成比内訳`, font: { size: 16 } }
+          }
+        }
+      });
     }
   </script>
 </body>
