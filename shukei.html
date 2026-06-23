@@ -228,6 +228,7 @@
       document.getElementById('results').classList.remove('hidden');
     }
 
+    // 🎨 円グラフを描画するメインロジック（スマホ重なり防止・最適化版）
     function renderPieChart() {
       const checkboxes = document.getElementsByName('chartGroup');
       let selectedKey = null;
@@ -284,23 +285,40 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true, // アスペクト比を維持
+          // 💡 グラフ自体の大きさを最大75%に縮小し、周りに文字が広がるスペースを強制的に作ります
+          radius: '75%', 
           layout: {
-            padding: { top: 30, bottom: 30, left: 60, right: 60 }
+            // 上下のタイトルや周りの文字が切れないように余白を広めに調整
+            padding: { top: 40, bottom: 40, left: 55, right: 55 }
           },
           plugins: {
             legend: { display: false }, 
-            title: { display: true, text: `【${selectedLabel}】構成比内訳`, font: { size: 16 } },
+            title: { 
+              display: true, 
+              text: `【${selectedLabel}】構成比内訳`, 
+              font: { size: 15, weight: 'bold' },
+              padding: { bottom: 20 } // タイトルとグラフの間の隙間を広げる
+            },
+            
+            // 🏷️ データラベル表示のカスタマイズ
             datalabels: {
               anchor: 'end',
-              align: 'end',
-              offset: 12,
+              align: 'end', // フチの外側に配置
+              offset: 8,    // フチからの距離
               color: '#1f2937',
-              font: { weight: 'bold', size: 12 },
+              font: { weight: 'bold', size: 11 }, // スマホ用に文字サイズを12→11へわずかに縮小
+              textAlign: 'center', // 2行の文字を中央揃えにする
+              
               formatter: (value, context) => {
                 const label = context.chart.data.labels[context.dataIndex];
                 const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
-                return `${label}\n${value}件 (${percentage}%)`;
+                
+                // 文字数が長い場合は適宜カットするガード（スマホの画面突き抜け防止）
+                const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
+                
+                return `${shortLabel}\n${value}件 (${percentage}%)`;
               }
             }
           }
