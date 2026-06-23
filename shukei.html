@@ -355,13 +355,13 @@
               align: 'end',
               offset: 6, // ★フチからの距離をわずかに詰めて外側領域を広く使う
               color: '#1f2937',
-              font: { weight: 'bold', size: 11 },
+              font: { weight: 'bold', size: 10 },
               textAlign: 'center',
               formatter: (value, context) => {
                 const label = context.chart.data.labels[context.dataIndex];
                 const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
-                const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
+                const shortLabel = label.length > 5 ? label.slice(0, 4) + '…' : label;
                 return `${shortLabel}\n${value}件 (${percentage}%)`;
               }
             }
