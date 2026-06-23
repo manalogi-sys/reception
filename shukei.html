@@ -14,13 +14,26 @@
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; }
     
-    /* 📅 横並びレイアウトの最適化（スマホはみ出し完全防止版） */
+    /* 📅 横並びレイアウトの最適化 */
     .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
-    .row-layout .col { width: 44%; min-width: 0; } /* 枠を44%に固定して絶対に被らせない */
-    .date-separator { font-weight: bold; color: #9ca3af; width: 8%; text-align: center; flex-shrink: 0; }
+    .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } /* ★サイズを44%に完全固定 */
+    .date-separator { font-weight: bold; color: #9ca3af; width: 12%; text-align: center; flex-shrink: 0; }
 
-    /* 📅 日付とセレクトボックスのサイズ調整 */
-    input[type="date"] { width: 100%; padding: 10px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 13px; background-color: #f9fafb; text-align: center; -webkit-appearance: none; }
+    /* 📅 日付（空欄時もサイズが縮まないようガード） */
+    input[type="date"] { 
+      display: block;
+      width: 100%; 
+      min-width: 100%;
+      height: 42px; /* ★高さを固定して空欄時も形を維持 */
+      padding: 10px 4px; 
+      border: 1px solid #d1d5db; 
+      border-radius: 8px; 
+      box-sizing: border-box; 
+      font-size: 14px; 
+      background-color: #f9fafb; 
+      text-align: center; 
+      -webkit-appearance: none; 
+    }
     select { width: 100%; padding: 12px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; }
     
     button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
@@ -33,9 +46,9 @@
     .checkbox-item input { margin-right: 8px; transform: scale(1.1); cursor: pointer; }
     .checkbox-item.disabled { opacity: 0.4; cursor: not-allowed; background: #e5e7eb; }
 
-    /* 📊 グラフエリアのスタイル（立体感を出すドロップシャドウ） */
+    /* 📊 グラフエリア（3D風影エフェクト） */
     .chart-box { max-width: 450px; margin: 30px auto 0 auto; }
-    #myPieChart { filter: drop-shadow(0px 12px 4px rgba(40, 30, 80, 0.23)) drop-shadow(0px 18px 10px rgba(0,0,0,0.13)); }
+    #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
     /* KPIテーブルスタイル */
     .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -263,9 +276,8 @@
       const counts = {};
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
 
-      // 🧮 2%以下を「その他」に自動合算するロジック
       const totalItemsCount = rawArray.length;
-      const threshold = totalItemsCount * 0.02; // 2%の基準件数
+      const threshold = totalItemsCount * 0.02; // 2%の基準
       
       const processedCounts = {};
       let otherSum = 0;
@@ -273,19 +285,18 @@
       Object.entries(counts).forEach(([key, val]) => {
         const cleanKey = key.trim();
         if (cleanKey === 'その他') {
-          otherSum += val; // もともとある「その他」の件数をキープ
+          otherSum += val;
         } else if (val <= threshold) {
-          otherSum += val; // 2%以下なら「その他」の山にマージ
+          otherSum += val; // 2%以下はマージ
         } else {
-          processedCounts[cleanKey] = val; // 2%より大きければ通常通り
+          processedCounts[cleanKey] = val;
         }
       });
 
       if (otherSum > 0) {
-        processedCounts['その他'] = otherSum; // 最後に合算した「その他」を追加
+        processedCounts['その他'] = otherSum;
       }
 
-      // 🔄 多い順ソート ＆ 「その他」は絶対最後ガード
       const sortedEntries = Object.entries(processedCounts).sort((a, b) => {
         if (a[0] === 'その他') return 1;
         if (b[0] === 'その他') return -1;
@@ -325,10 +336,11 @@
         options: {
           responsive: true,
           maintainAspectRatio: true,
-          radius: '70%', // 12時の位置から綺麗に見せるため、サイズを微調整
-          rotation: -90, // 0時（12時）の位置から右回りにスタート
+          radius: '88%', // ★グラフ自体を大きくして外側の文字用スペースを拡張
+          rotation: -90, // 0時スタート右回り
           layout: {
-            padding: { top: 40, bottom: 40, left: 65, right: 65 }
+            // グラフが大きくなった分、文字切れを防ぐため左右のパディングを微調整
+            padding: { top: 30, bottom: 30, left: 45, right: 45 }
           },
           plugins: {
             legend: { display: false }, 
@@ -336,12 +348,12 @@
               display: true, 
               text: `【${selectedLabel}】構成比内訳`, 
               font: { size: 15, weight: 'bold' },
-              padding: { bottom: 25 }
+              padding: { bottom: 20 }
             },
             datalabels: {
               anchor: 'end',
               align: 'end',
-              offset: 10,
+              offset: 6, // ★フチからの距離をわずかに詰めて外側領域を広く使う
               color: '#1f2937',
               font: { weight: 'bold', size: 11 },
               textAlign: 'center',
@@ -349,7 +361,6 @@
                 const label = context.chart.data.labels[context.dataIndex];
                 const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
-                // 7文字以上の長いラベルはスリム化
                 const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
                 return `${shortLabel}\n${value}件 (${percentage}%)`;
               }
