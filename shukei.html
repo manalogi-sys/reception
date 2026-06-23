@@ -130,8 +130,8 @@
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycby2M7WR6IjPfdY-oRHJ6l_OkhElt5bBL4yJil8OVXilc53S_qQ99rtITfjfFea6jYLwFQ/exec";
     let userId = "";
-    let globalChartsData = null; // GASから返ってきたローデータを一時保存する箱
-    let currentChartInstance = null; // 現在表示しているグラフオブジェクト
+    let globalChartsData = null; 
+    let currentChartInstance = null; 
 
     document.addEventListener("DOMContentLoaded", () => {
       liff.init({ liffId: "2010292787-uHHgSxXo" })
@@ -140,10 +140,9 @@
           else { liff.getProfile().then(profile => { userId = profile.userId; }); }
         }).catch(err => alert("LIFF初期化エラー: " + err));
       
-      toggleCheckboxes(); // 初期状態のチェックボックス制御
+      toggleCheckboxes(); 
     });
 
-    // 🔒 フィルタ条件に応じてチェックボックスの有効・無効を切り替えるロジック
     function toggleCheckboxes() {
       const statusFilter = document.getElementById('statusFilter').value;
       
@@ -152,7 +151,6 @@
       const cbRiyu = document.getElementById('cb-riyu');
       const itemRiyu = document.getElementById('item-riyu');
 
-      // 1. 成約or不成約は「指定なし」の時だけ選択可
       if (statusFilter === "指定なし") {
         cbStatus.disabled = false;
         itemStatus.classList.remove('disabled');
@@ -162,7 +160,6 @@
         itemStatus.classList.add('disabled');
       }
 
-      // 2. 不成約理由は「成約」を選択した場合は選択不可
       if (statusFilter === "成約") {
         cbRiyu.disabled = true;
         cbRiyu.checked = false;
@@ -173,13 +170,11 @@
       }
     }
 
-    // 👆 単一選択（ラジオボタン風）にするためのチェックボックス制御
     function handleCheckboxChange(clickedCb) {
       if (clickedCb.checked) {
         const checkboxes = document.getElementsByName('chartGroup');
         checkboxes.forEach(cb => { if (cb !== clickedCb) cb.checked = false; });
       }
-      // すでにデータがあれば、チェックを変えた瞬間にグラフを再描画
       if (globalChartsData) { renderPieChart(); }
     }
 
@@ -233,7 +228,6 @@
       document.getElementById('results').classList.remove('hidden');
     }
 
-    // 🎨 円グラフを描画するメインロジック
     function renderPieChart() {
       const checkboxes = document.getElementsByName('chartGroup');
       let selectedKey = null;
@@ -248,4 +242,71 @@
 
       const container = document.getElementById('chartContainer');
       
-      if (!
+      if (!selectedKey || !globalChartsData || !globalChartsData[selectedKey]) {
+        container.classList.add('hidden');
+        if (currentChartInstance) currentChartInstance.destroy();
+        return;
+      }
+
+      const rawArray = globalChartsData[selectedKey];
+      const counts = {};
+      rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
+
+      const labels = Object.keys(counts);
+      const values = Object.values(counts);
+
+      if (labels.length === 0) {
+        container.classList.add('hidden');
+        if (currentChartInstance) currentChartInstance.destroy();
+        return;
+      }
+
+      container.classList.remove('hidden');
+
+      if (currentChartInstance) { currentChartInstance.destroy(); }
+
+      Chart.register(ChartDataLabels);
+
+      const ctx = document.getElementById('myPieChart').getContext('2d');
+      currentChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: [
+              '#4c3a85', '#6b57ab', '#8c76cf', '#ad97e6', '#cbb6fc', 
+              '#e3d3ff', '#332363', '#574596', '#7b67be', '#9d89e2'
+            ],
+            borderWidth: 1,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          layout: {
+            padding: { top: 30, bottom: 30, left: 60, right: 60 }
+          },
+          plugins: {
+            legend: { display: false }, 
+            title: { display: true, text: `【${selectedLabel}】構成比内訳`, font: { size: 16 } },
+            datalabels: {
+              anchor: 'end',
+              align: 'end',
+              offset: 12,
+              color: '#1f2937',
+              font: { weight: 'bold', size: 12 },
+              formatter: (value, context) => {
+                const label = context.chart.data.labels[context.dataIndex];
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${label}\n${value}件 (${percentage}%)`;
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
