@@ -13,10 +13,15 @@
     h3 { margin-top: 0; font-size: 18px; color: #111827; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 15px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; }
-    input[type="date"], select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #f9fafb; }
+    input[type="date"], select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 15px; background-color: #f9fafb; }
     button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     button:hover { background-color: #059669; }
     .hidden { display: none; }
+
+    /* 📅 1行に並べるための共通スタイル */
+    .row-layout { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .row-layout .col { flex: 1; min-width: 0; } /* 均等に引き伸ばす */
+    .date-separator { font-weight: bold; color: #6b7280; padding: 0 2px; }
 
     /* 🗂️ チェックボックス全体のスタイル */
     .checkbox-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
@@ -44,46 +49,48 @@
     <h3>📅 条件指定</h3>
     
     <div class="form-group">
-      <label for="startDate">開始日</label>
-      <input type="date" id="startDate">
-    </div>
-    <div class="form-group">
-      <label for="endDate">終了日</label>
-      <input type="date" id="endDate">
-    </div>
-
-    <div class="form-group">
-      <label for="staffFilter">担当者</label>
-      <select id="staffFilter">
-        <option value="指定なし">指定なし（すべて）</option>
-        <option value="大塚">大塚</option>
-        <option value="久保田">久保田</option>
-        <option value="仙波">仙波</option>
-        <option value="新井">新井</option>
-        <option value="三好">三好</option>
-      </select>
+      <label>期間</label>
+      <div class="row-layout">
+        <div class="col"><input type="date" id="startDate"></div>
+        <div class="date-separator">〜</div>
+        <div class="col"><input type="date" id="endDate"></div>
+      </div>
     </div>
 
     <div class="form-group">
-      <label for="genderFilter">性別</label>
-      <select id="genderFilter">
-        <option value="指定なし">指定なし（すべて）</option>
-        <option value="男性">男性</option>
-        <option value="女性">女性</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="statusFilter">成約 or 不成約</label>
-      <select id="statusFilter" onchange="toggleCheckboxes()">
-        <option value="指定なし">指定なし（すべて）</option>
-        <option value="成約">成約</option>
-        <option value="不成約">不成約</option>
-      </select>
+      <div class="row-layout">
+        <div class="col">
+          <label for="staffFilter">担当者</label>
+          <select id="staffFilter">
+            <option value="指定なし">指定なし</option>
+            <option value="大塚">大塚</option>
+            <option value="久保田">久保田</option>
+            <option value="仙波">仙波</option>
+            <option value="新井">新井</option>
+            <option value="三好">三好</option>
+          </select>
+        </div>
+        <div class="col">
+          <label for="genderFilter">性別</label>
+          <select id="genderFilter">
+            <option value="指定なし">指定なし</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+          </select>
+        </div>
+        <div class="col">
+          <label for="statusFilter">成約状況</label>
+          <select id="statusFilter" onchange="toggleCheckboxes()">
+            <option value="指定なし">指定なし</option>
+            <option value="成約">成約</option>
+            <option value="不成約">不成約</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div class="form-group" style="margin-top: 20px;">
-      <label>📊 円グラフで構成比を表示する項目（1つ選択）</label>
+      <label>🍩 構成比を表示（1つ選択）</label>
       <div class="checkbox-container">
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nyuten" onchange="handleCheckboxChange(this)">入店時間</label>
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nendai" onchange="handleCheckboxChange(this)">年代</label>
@@ -228,7 +235,6 @@
       document.getElementById('results').classList.remove('hidden');
     }
 
-    // 🎨 円グラフを描画するメインロジック（スマホ重なり防止・最適化版）
     function renderPieChart() {
       const checkboxes = document.getElementsByName('chartGroup');
       let selectedKey = null;
@@ -285,12 +291,10 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true, // アスペクト比を維持
-          // 💡 グラフ自体の大きさを最大75%に縮小し、周りに文字が広がるスペースを強制的に作ります
+          maintainAspectRatio: true,
           radius: '75%', 
           layout: {
-            // 上下のタイトルや周りの文字が切れないように余白を広めに調整
-            padding: { top: 40, bottom: 40, left: 55, right: 55 }
+            padding: { top: 40, bottom: 40, left: 60, right: 60 }
           },
           plugins: {
             legend: { display: false }, 
@@ -298,26 +302,20 @@
               display: true, 
               text: `【${selectedLabel}】構成比内訳`, 
               font: { size: 15, weight: 'bold' },
-              padding: { bottom: 20 } // タイトルとグラフの間の隙間を広げる
+              padding: { bottom: 20 }
             },
-            
-            // 🏷️ データラベル表示のカスタマイズ
             datalabels: {
               anchor: 'end',
-              align: 'end', // フチの外側に配置
-              offset: 8,    // フチからの距離
+              align: 'end',
+              offset: 8,
               color: '#1f2937',
-              font: { weight: 'bold', size: 11 }, // スマホ用に文字サイズを12→11へわずかに縮小
-              textAlign: 'center', // 2行の文字を中央揃えにする
-              
+              font: { weight: 'bold', size: 11 },
+              textAlign: 'center',
               formatter: (value, context) => {
                 const label = context.chart.data.labels[context.dataIndex];
                 const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
-                
-                // 文字数が長い場合は適宜カットするガード（スマホの画面突き抜け防止）
                 const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
-                
                 return `${shortLabel}\n${value}件 (${percentage}%)`;
               }
             }
