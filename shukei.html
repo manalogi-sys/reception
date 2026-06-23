@@ -10,22 +10,22 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
     .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
-    h3 { margin-top: 0; font-size: 18px; color: #111827; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 15px; }
+    h3 { margin-top: 0; font-size: 18px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 15px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; }
     
-    /* 📅 日付とセレクトボックスのサイズ調整（スマホはみ出し・被り防止） */
-    input[type="date"] { width: 100%; padding: 10px 6px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; text-align: center; }
+    /* 📅 横並びレイアウトの最適化（スマホはみ出し完全防止版） */
+    .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
+    .row-layout .col { width: 44%; min-width: 0; } /* 枠を44%に固定して絶対に被らせない */
+    .date-separator { font-weight: bold; color: #9ca3af; width: 8%; text-align: center; flex-shrink: 0; }
+
+    /* 📅 日付とセレクトボックスのサイズ調整 */
+    input[type="date"] { width: 100%; padding: 10px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 13px; background-color: #f9fafb; text-align: center; -webkit-appearance: none; }
     select { width: 100%; padding: 12px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; }
     
     button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     button:hover { background-color: #059669; }
     .hidden { display: none; }
-
-    /* 📅 横並びレイアウトの最適化 */
-    .row-layout { display: flex; gap: 4px; align-items: center; margin-bottom: 12px; width: 100%; }
-    .row-layout .col { flex: 1; min-width: 0; } 
-    .date-separator { font-weight: bold; color: #9ca3af; padding: 0 4px; flex-shrink: 0; }
 
     /* 🗂️ チェックボックス全体のスタイル */
     .checkbox-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
@@ -33,10 +33,9 @@
     .checkbox-item input { margin-right: 8px; transform: scale(1.1); cursor: pointer; }
     .checkbox-item.disabled { opacity: 0.4; cursor: not-allowed; background: #e5e7eb; }
 
-    /* 📊 グラフエリアのスタイル（立体感を出すドロップシャドウを適用） */
+    /* 📊 グラフエリアのスタイル（立体感を出すドロップシャドウ） */
     .chart-box { max-width: 450px; margin: 30px auto 0 auto; }
-    /* 💡 グラフキャンバス自体に3Dの厚みと立体的な影を演出するエフェクト */
-    #myPieChart { filter: drop-shadow(0px 12px 4px rgba(40, 30, 80, 0.25)) drop-shadow(0px 18px 10px rgba(0,0,0,0.15)); }
+    #myPieChart { filter: drop-shadow(0px 12px 4px rgba(40, 30, 80, 0.23)) drop-shadow(0px 18px 10px rgba(0,0,0,0.13)); }
 
     /* KPIテーブルスタイル */
     .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -65,8 +64,8 @@
 
     <div class="form-group">
       <div class="row-layout">
-        <div class="col">
-          <label for="staffFilter">担当者</label>
+        <div style="width: 31%;">
+          <label for="staffFilter" style="font-size: 13px;">担当者</label>
           <select id="staffFilter">
             <option value="指定なし">指定なし</option>
             <option value="大塚">大塚</option>
@@ -76,16 +75,16 @@
             <option value="三好">三好</option>
           </select>
         </div>
-        <div class="col">
-          <label for="genderFilter">性別</label>
+        <div style="width: 31%;">
+          <label for="genderFilter" style="font-size: 13px;">性別</label>
           <select id="genderFilter">
             <option value="指定なし">指定なし</option>
             <option value="男性">男性</option>
             <option value="女性">女性</option>
           </select>
         </div>
-        <div class="col">
-          <label for="statusFilter">成約状況</label>
+        <div style="width: 34%;">
+          <label for="statusFilter" style="font-size: 13px;">成約状況</label>
           <select id="statusFilter" onchange="toggleCheckboxes()">
             <option value="指定なし">指定なし</option>
             <option value="成約">成約</option>
@@ -158,7 +157,6 @@
 
     function toggleCheckboxes() {
       const statusFilter = document.getElementById('statusFilter').value;
-      
       const cbStatus = document.getElementById('cb-status');
       const itemStatus = document.getElementById('item-status');
       const cbRiyu = document.getElementById('cb-riyu');
@@ -265,12 +263,33 @@
       const counts = {};
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
 
-      // 🔄 ★新ロジック: 件数が多い順（降順）に並び替える処理を追加！
-      // ただし、「その他」という項目がある場合は必ず一番最後に回すガード付き
-      const sortedEntries = Object.entries(counts).sort((a, b) => {
+      // 🧮 2%以下を「その他」に自動合算するロジック
+      const totalItemsCount = rawArray.length;
+      const threshold = totalItemsCount * 0.02; // 2%の基準件数
+      
+      const processedCounts = {};
+      let otherSum = 0;
+
+      Object.entries(counts).forEach(([key, val]) => {
+        const cleanKey = key.trim();
+        if (cleanKey === 'その他') {
+          otherSum += val; // もともとある「その他」の件数をキープ
+        } else if (val <= threshold) {
+          otherSum += val; // 2%以下なら「その他」の山にマージ
+        } else {
+          processedCounts[cleanKey] = val; // 2%より大きければ通常通り
+        }
+      });
+
+      if (otherSum > 0) {
+        processedCounts['その他'] = otherSum; // 最後に合算した「その他」を追加
+      }
+
+      // 🔄 多い順ソート ＆ 「その他」は絶対最後ガード
+      const sortedEntries = Object.entries(processedCounts).sort((a, b) => {
         if (a[0] === 'その他') return 1;
         if (b[0] === 'その他') return -1;
-        return b[1] - a[1]; // 件数の多い順
+        return b[1] - a[1]; 
       });
 
       const labels = sortedEntries.map(entry => entry[0]);
@@ -295,7 +314,6 @@
           labels: labels,
           datasets: [{
             data: values,
-            // 🎨 立体感を引き立てるグラデーション調の配色（1番大きい要素が深い紫からスタート）
             backgroundColor: [
               '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
               '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
@@ -307,11 +325,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: true,
-          radius: '72%', // 周りの文字スペースをさらに少し広げて安定化
-          // 🔄 時計回りのスタート位置を真上（12時の方向: -90度）に指定！
-          rotation: -90, 
+          radius: '70%', // 12時の位置から綺麗に見せるため、サイズを微調整
+          rotation: -90, // 0時（12時）の位置から右回りにスタート
           layout: {
-            padding: { top: 40, bottom: 40, left: 60, right: 60 }
+            padding: { top: 40, bottom: 40, left: 65, right: 65 }
           },
           plugins: {
             legend: { display: false }, 
@@ -332,6 +349,7 @@
                 const label = context.chart.data.labels[context.dataIndex];
                 const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
+                // 7文字以上の長いラベルはスリム化
                 const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
                 return `${shortLabel}\n${value}件 (${percentage}%)`;
               }
