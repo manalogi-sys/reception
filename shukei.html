@@ -13,15 +13,19 @@
     h3 { margin-top: 0; font-size: 18px; color: #111827; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 15px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; }
-    input[type="date"], select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 15px; background-color: #f9fafb; }
+    
+    /* 📅 日付とセレクトボックスのサイズ調整（スマホはみ出し・被り防止） */
+    input[type="date"] { width: 100%; padding: 10px 6px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; text-align: center; }
+    select { width: 100%; padding: 12px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; }
+    
     button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     button:hover { background-color: #059669; }
     .hidden { display: none; }
 
-    /* 📅 1行に並べるための共通スタイル */
-    .row-layout { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
-    .row-layout .col { flex: 1; min-width: 0; } /* 均等に引き伸ばす */
-    .date-separator { font-weight: bold; color: #6b7280; padding: 0 2px; }
+    /* 📅 横並びレイアウトの最適化 */
+    .row-layout { display: flex; gap: 4px; align-items: center; margin-bottom: 12px; width: 100%; }
+    .row-layout .col { flex: 1; min-width: 0; } 
+    .date-separator { font-weight: bold; color: #9ca3af; padding: 0 4px; flex-shrink: 0; }
 
     /* 🗂️ チェックボックス全体のスタイル */
     .checkbox-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
@@ -29,8 +33,10 @@
     .checkbox-item input { margin-right: 8px; transform: scale(1.1); cursor: pointer; }
     .checkbox-item.disabled { opacity: 0.4; cursor: not-allowed; background: #e5e7eb; }
 
-    /* 📊 グラフエリアのスタイル */
+    /* 📊 グラフエリアのスタイル（立体感を出すドロップシャドウを適用） */
     .chart-box { max-width: 450px; margin: 30px auto 0 auto; }
+    /* 💡 グラフキャンバス自体に3Dの厚みと立体的な影を演出するエフェクト */
+    #myPieChart { filter: drop-shadow(0px 12px 4px rgba(40, 30, 80, 0.25)) drop-shadow(0px 18px 10px rgba(0,0,0,0.15)); }
 
     /* KPIテーブルスタイル */
     .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -90,7 +96,7 @@
     </div>
 
     <div class="form-group" style="margin-top: 20px;">
-      <label>🍩 構成比を表示（1つ選択）</label>
+      <label>📊 構成比を表示（1つ選択）</label>
       <div class="checkbox-container">
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nyuten" onchange="handleCheckboxChange(this)">入店時間</label>
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nendai" onchange="handleCheckboxChange(this)">年代</label>
@@ -259,8 +265,16 @@
       const counts = {};
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
 
-      const labels = Object.keys(counts);
-      const values = Object.values(counts);
+      // 🔄 ★新ロジック: 件数が多い順（降順）に並び替える処理を追加！
+      // ただし、「その他」という項目がある場合は必ず一番最後に回すガード付き
+      const sortedEntries = Object.entries(counts).sort((a, b) => {
+        if (a[0] === 'その他') return 1;
+        if (b[0] === 'その他') return -1;
+        return b[1] - a[1]; // 件数の多い順
+      });
+
+      const labels = sortedEntries.map(entry => entry[0]);
+      const values = sortedEntries.map(entry => entry[1]);
 
       if (labels.length === 0) {
         container.classList.add('hidden');
@@ -281,18 +295,21 @@
           labels: labels,
           datasets: [{
             data: values,
+            // 🎨 立体感を引き立てるグラデーション調の配色（1番大きい要素が深い紫からスタート）
             backgroundColor: [
-              '#4c3a85', '#6b57ab', '#8c76cf', '#ad97e6', '#cbb6fc', 
-              '#e3d3ff', '#332363', '#574596', '#7b67be', '#9d89e2'
+              '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
+              '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
             ],
-            borderWidth: 1,
+            borderWidth: 1.5,
             borderColor: '#ffffff'
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: true,
-          radius: '75%', 
+          radius: '72%', // 周りの文字スペースをさらに少し広げて安定化
+          // 🔄 時計回りのスタート位置を真上（12時の方向: -90度）に指定！
+          rotation: -90, 
           layout: {
             padding: { top: 40, bottom: 40, left: 60, right: 60 }
           },
@@ -302,12 +319,12 @@
               display: true, 
               text: `【${selectedLabel}】構成比内訳`, 
               font: { size: 15, weight: 'bold' },
-              padding: { bottom: 20 }
+              padding: { bottom: 25 }
             },
             datalabels: {
               anchor: 'end',
               align: 'end',
-              offset: 8,
+              offset: 10,
               color: '#1f2937',
               font: { weight: 'bold', size: 11 },
               textAlign: 'center',
