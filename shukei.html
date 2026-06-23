@@ -8,14 +8,15 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
     .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
-    h3 { margin-top: 0; font-size: 18px; color: #111827; border-left: 4px solid #10b981; padding-left: 8px; }
+    h3 { margin-top: 0; font-size: 18px; color: #111827; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 15px; }
     .form-group { margin-bottom: 12px; }
-    input[type="date"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #f9fafb; }
+    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; } /* ★追加: ラベル用スタイル */
+    input[type="date"], select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #f9fafb; } /* ★変更: selectを追加 */
     button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     button:hover { background-color: #059669; }
     .hidden { display: none; }
 
-    /* かっこいい表（KPIテーブル）のスタイル */
+    /* KPIテーブルスタイル */
     .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 12px 10px; font-size: 14px; text-align: left; font-weight: 600; }
     .kpi-table td { padding: 14px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 15px; }
@@ -29,9 +30,47 @@
 <body>
 
   <div class="card">
-    <h3>📅 期間指定</h3>
-    <div class="form-group"><input type="date" id="startDate"></div>
-    <div class="form-group"><input type="date" id="endDate"></div>
+    <h3>📅 条件指定</h3>
+    
+    <div class="form-group">
+      <label for="startDate">開始日</label>
+      <input type="date" id="startDate">
+    </div>
+    <div class="form-group">
+      <label for="endDate">終了日</label>
+      <input type="date" id="endDate">
+    </div>
+
+    <div class="form-group">
+      <label for="staffFilter">担当者</label>
+      <select id="staffFilter">
+        <option value="指定なし">指定なし（すべて）</option>
+        <option value="大塚">大塚</option>
+        <option value="久保田">久保田</option>
+        <option value="仙波">仙波</option>
+        <option value="新井">新井</option>
+        <option value="三好">三好</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="genderFilter">性別</label>
+      <select id="genderFilter">
+        <option value="指定なし">指定なし（すべて）</option>
+        <option value="男性">男性</option>
+        <option value="女性">女性</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="statusFilter">成約 or 不成約</label>
+      <select id="statusFilter">
+        <option value="指定なし">指定なし（すべて）</option>
+        <option value="成約">成約</option>
+        <option value="不成約">不成約</option>
+      </select>
+    </div>
+
     <button onclick="fetchData()">集計を実行</button>
   </div>
 
@@ -59,11 +98,11 @@
   </div>
 
   <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby2M7WR6IjPfdY-oRHJ6l_OkhElt5bBL4yJil8OVXilc53S_qQ99rtITfjfFea6jYLwFQ/exec"; // あなたのGAS WebアプリURL
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby2M7WR6IjPfdY-oRHJ6l_OkhElt5bBL4yJil8OVXilc53S_qQ99rtITfjfFea6jYLwFQ/exec";
     let userId = "";
 
     document.addEventListener("DOMContentLoaded", () => {
-      liff.init({ liffId: "2010292787-uHHgSxXo" }) // あなたのLIFF ID
+      liff.init({ liffId: "2010292787-uHHgSxXo" })
         .then(() => {
           if (!liff.isLoggedIn()) { liff.login(); }
           else { liff.getProfile().then(profile => { userId = profile.userId; }); }
@@ -73,10 +112,22 @@
     function fetchData() {
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
+      
+      // ★追加: 新しい選択ボックスの値を取得
+      const staff = document.getElementById('staffFilter').value;
+      const gender = document.getElementById('genderFilter').value;
+      const status = document.getElementById('statusFilter').value;
+
       if (!start || !end) { alert('期間を選択してください。'); return; }
       if (!userId) { alert('LINEユーザー情報を取得中です。しばらく待ってから再度押してください。'); return; }
 
-      fetch(`${GAS_API_URL}?userId=${userId}&start=${start}&end=${end}`)
+      // ★変更: URLに新しい3つのパラメータを追加してGASに送信（encodeURIComponentで安全に処理）
+      const url = `${GAS_API_URL}?userId=${userId}&start=${start}&end=${end}` + 
+                  `&staff=${encodeURIComponent(staff)}` + 
+                  `&gender=${encodeURIComponent(gender)}` + 
+                  `&status=${encodeURIComponent(status)}`;
+
+      fetch(url)
         .then(res => res.json())
         .then(data => {
           if (data.error) { alert(data.error); return; }
@@ -85,28 +136,18 @@
     }
 
     function calculateAndRender(data) {
-      // 1. 各数値をJavaScript側で計算・整形
       const total = data.total;
       const seiyaku = data.seiyaku;
       const kaitori = data.kaitori;
       const oroshi = data.oroshi;
 
-      // 成約率 (%) = 成約数 / 来客数
       const seiyakuRate = total > 0 ? ((seiyaku / total) * 100).toFixed(1) : "0.0";
-      
-      // 買取客単価 = 買取総額 / 成約数
       const tanka = seiyaku > 0 ? Math.round(kaitori / seiyaku) : 0;
-      
-      // 見込粗利額 = 予想卸総額 - 買取総額
       const arari = oroshi - kaitori;
-      
-      // 見込粗利率 (%) = 見込粗利額 / 予想卸総額
       const arariRate = oroshi > 0 ? ((arari / oroshi) * 100).toFixed(1) : "0.0";
 
-      // 2. 通貨フォーマット関数
       const fmt = (num) => "¥" + num.toLocaleString();
 
-      // 3. 画面の各要素に値をセット
       document.getElementById('lbl-total').innerText = total.toLocaleString() + " 件";
       document.getElementById('lbl-seiyaku').innerText = seiyaku.toLocaleString() + " 件";
       document.getElementById('lbl-rate').innerText = seiyakuRate + " %";
@@ -116,7 +157,6 @@
       document.getElementById('lbl-arari').innerText = fmt(arari);
       document.getElementById('lbl-arari-rate').innerText = arariRate + " %";
 
-      // 表を表示
       document.getElementById('results').classList.remove('hidden');
     }
   </script>
