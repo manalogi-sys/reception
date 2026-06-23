@@ -6,6 +6,7 @@
   <title>来客データ状況ダッシュボード</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
     .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
@@ -24,7 +25,7 @@
     .checkbox-item.disabled { opacity: 0.4; cursor: not-allowed; background: #e5e7eb; }
 
     /* 📊 グラフエリアのスタイル */
-    .chart-box { max-width: 320px; margin: 20px auto 0 auto; }
+    .chart-box { max-width: 450px; margin: 30px auto 0 auto; }
 
     /* KPIテーブルスタイル */
     .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -89,7 +90,7 @@
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="shokugyo" onchange="handleCheckboxChange(this)">職業</label>
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="moki" onchange="handleCheckboxChange(this)">来店動機</label>
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="hp" onchange="handleCheckboxChange(this)">HP詳細</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="hinshu" onchange="changeCheckbox(this)">査定品種別</label>
+        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="hinshu" onchange="handleCheckboxChange(this)">査定品種別</label>
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="soba" onchange="handleCheckboxChange(this)">相場感</label>
         <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="aimitsumori" onchange="handleCheckboxChange(this)">相見積もり</label>
         <label class="checkbox-item" id="item-status"><input type="checkbox" name="chartGroup" value="status" id="cb-status" onchange="handleCheckboxChange(this)">成約or不成約</label>
@@ -178,12 +179,9 @@
         const checkboxes = document.getElementsByName('chartGroup');
         checkboxes.forEach(cb => { if (cb !== clickedCb) cb.checked = false; });
       }
-      // もしすでにデータがあれば、チェックを変えた瞬間にグラフを再描画する
+      // すでにデータがあれば、チェックを変えた瞬間にグラフを再描画
       if (globalChartsData) { renderPieChart(); }
     }
-
-    // 後方互換性用のダミー（タイポ防止ガード）
-    function changeCheckbox(cb) { handleCheckboxChange(cb); }
 
     function fetchData() {
       const start = document.getElementById('startDate').value;
@@ -204,9 +202,9 @@
         .then(res => res.json())
         .then(data => {
           if (data.error) { alert(data.error); return; }
-          globalChartsData = data.charts; // グラフデータを保持
+          globalChartsData = data.charts; 
           calculateAndRender(data);
-          renderPieChart(); // グラフを描画
+          renderPieChart(); 
         }).catch(err => alert("通信エラー: " + err));
     }
 
@@ -235,9 +233,8 @@
       document.getElementById('results').classList.remove('hidden');
     }
 
-    // 🎨 動的に選ばれた項目の内訳を集計し、円グラフを描画するメインロジック
+    // 🎨 円グラフを描画するメインロジック
     function renderPieChart() {
-      // 1. 現在どれがチェックされているか特定する
       const checkboxes = document.getElementsByName('chartGroup');
       let selectedKey = null;
       let selectedLabel = "";
@@ -251,56 +248,4 @@
 
       const container = document.getElementById('chartContainer');
       
-      // 何もチェックされていなければグラフエリアを隠して終了
-      if (!selectedKey || !globalChartsData || !globalChartsData[selectedKey]) {
-        container.classList.add('hidden');
-        if (currentChartInstance) currentChartInstance.destroy();
-        return;
-      }
-
-      // 2. 配列のローデータ（例：["A", "B", "A"]）から件数を集計（オブジェクト化）
-      const rawArray = globalChartsData[selectedKey];
-      const counts = {};
-      rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
-
-      // 3. Chart.jsが読めるように「ラベルの配列」と「数値の配列」に分ける
-      const labels = Object.keys(counts);
-      const values = Object.values(counts);
-
-      if (labels.length === 0) {
-        container.classList.add('hidden');
-        if (currentChartInstance) currentChartInstance.destroy();
-        return;
-      }
-
-      container.classList.remove('hidden');
-
-      // 古いグラフが残っていれば破棄（バグ防止の重要処理）
-      if (currentChartInstance) { currentChartInstance.destroy(); }
-
-      // 4. 新しいグラフの描画
-      const ctx = document.getElementById('myPieChart').getContext('2d');
-      currentChartInstance = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: values,
-            backgroundColor: [
-              '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
-              '#ec4899', '#6b7280', '#14b8a6', '#f43f5e', '#a855f7'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'bottom' },
-            title: { display: true, text: `【${selectedLabel}】構成比内訳`, font: { size: 16 } }
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+      if (!
