@@ -390,7 +390,7 @@
             anchor: 'end',
             align: chartType === 'pie' ? 'end' : 'right',
             // ★ 円グラフの文字被り対策：文字を円からさらに外側（20px）へ離してスペースを確保
-            offset: chartType === 'pie' ? 30 : 4,
+            offset: chartType === 'pie' ? 20 : 4,
             formatter: (value, context) => {
               const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
               const percentage = ((value / total) * 100).toFixed(1);
@@ -408,7 +408,7 @@
 
       if (chartType === 'pie') {
         // 円グラフを大きく表示
-        chartOptions.radius = '90%'; 
+        chartOptions.radius = '110%'; 
         // 12時の位置から時計回りに並べる
         chartOptions.rotation = 0; 
         // 離した文字が画面外に切れないよう、外側の余白を最大化
