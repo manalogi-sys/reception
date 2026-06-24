@@ -93,6 +93,27 @@
     .highlight-row td { background-color: #ecfdf5 !important; }
     .highlight-row .label-col { color: #065f46; font-weight: bold; }
     .highlight-row .num-col { color: #059669; font-size: 16px; }
+
+    /* 📊 構成比プルダウンの横並びコンテナ */
+    .chart-select-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      border-top: 1px dashed #e5e7eb;
+      padding-top: 10px;
+    }
+    .chart-select-container label {
+      font-size: 13.5px;
+      font-weight: bold;
+      color: #374151;
+      white-space: nowrap;
+      margin-right: 10px;
+    }
+    .chart-select-container .select-wrapper {
+      flex-grow: 1;
+      max-width: 70%; /* 右側に寄りすぎず適度な幅を維持 */
+    }
   </style>
 </head>
 <body>
@@ -163,23 +184,25 @@
       </tbody>
     </table>
 
-    <div class="form-group" style="margin-top: 10px; border-top: 1px dashed #e5e7eb; padding-top: 10px;"> 
-      <label for="chartFieldSelect" style="color: #374151;">📊 構成比を表示する項目を選択</label>
-      <select id="chartFieldSelect" onchange="handleSelectChange()" style="margin-top: 4px;">
-        <option value="">選択してください（グラフ非表示）</option>
-        <option value="nyuten">入店時間</option>
-        <option value="nendai">年代</option>
-        <option value="shokugyo">職業</option>
-        <option value="moki">来店動機</option>
-        <option value="hp">HP詳細</option>
-        <option value="hinshu">査定品種別</option>
-        <option value="soba">相場感</option>
-        <option value="aimitsumori">相見積もり</option>
-        <option value="status" id="opt-status">成約or不成約</option>
-        <option value="riyu" id="opt-riyu">不成約理由</option>
-        <option value="oroshisaki">卸先</option>
-        <option value="juho">住所</option>
-      </select>
+    <div class="chart-select-container"> 
+      <label for="chartFieldSelect">📊 構成比を表示</label>
+      <div class="select-wrapper">
+        <select id="chartFieldSelect" onchange="handleSelectChange()">
+          <option value="">選択してください（グラフ非表示）</option>
+          <option value="nyuten">入店時間</option>
+          <option value="nendai">年代</option>
+          <option value="shokugyo">職業</option>
+          <option value="moki">来店動機</option>
+          <option value="hp">HP詳細</option>
+          <option value="hinshu">査定品種別</option>
+          <option value="soba">相場感</option>
+          <option value="aimitsumori">相見積もり</option>
+          <option value="status" id="opt-status">成約or不成約</option>
+          <option value="riyu" id="opt-riyu">不成約理由</option>
+          <option value="oroshisaki">卸先</option>
+          <option value="juho">住所</option>
+        </select>
+      </div>
     </div>
 
     <div id="chartContainer" class="chart-box hidden">
@@ -251,8 +274,6 @@
           if (data.error) { alert(data.error); return; }
           globalChartsData = data.charts; 
           calculateAndRender(data);
-          
-          // 新しいデータを取得した際は、一旦グラフ選択状態に合わせて再描画（未選択なら非表示を維持）
           renderPieChart(); 
         }).catch(err => alert("通信エラー: " + err));
     }
