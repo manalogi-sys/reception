@@ -348,24 +348,14 @@
         processedCounts['その他'] = otherSum;
       }
 
+      // ★ ソートロジックの抜本修正
+      // 円グラフも棒グラフも、ストレートに「件数が多い順（降順）」に並べ、その他を最後尾にします。
       let sortedEntries = Object.entries(processedCounts);
-
-      // ★【円グラフ】と【棒グラフ】のソートを個別に切り分け
-      if (chartType === 'bar') {
-        // 棒グラフ用: 画面の上から多い順にするため、あえて[ その他 -> 少ない順 -> 一番多い(DPS) ] の順で配列を作成
-        sortedEntries.sort((a, b) => {
-          if (a[0] === 'その他') return -1; 
-          if (b[0] === 'その他') return 1;
-          return a[1] - b[1]; 
-        });
-      } else {
-        // 円グラフ用: 12時から時計回りに綺麗に多い順に並べるため、ストレートに「多い順（降順）」にして、その他を最後尾に
-        sortedEntries.sort((a, b) => {
-          if (a[0] === 'その他') return 1; 
-          if (b[0] === 'その他') return -1;
-          return b[1] - a[1]; 
-        });
-      }
+      sortedEntries.sort((a, b) => {
+        if (a[0] === 'その他') return 1; 
+        if (b[0] === 'その他') return -1;
+        return b[1] - a[1]; // 件数が多い順（降順）
+      });
 
       const labels = sortedEntries.map(entry => entry[0]);
       const values = sortedEntries.map(entry => entry[1]);
@@ -382,17 +372,12 @@
 
       const ctx = document.getElementById('myPieChart').getContext('2d');
       
-      // カラーパレット（基本配列：濃い色から薄い色へ）
+      // カラーパレット（濃い色から薄い色へ）
       const baseColors = [
         '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
         '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
       ];
-      
-      // ★ 棒グラフは配列の「お尻（DPS）」が一番上に描画される仕様を考慮し、色の配列も反転。
-      // これで、一番上のDPSが最も濃くなり、下にいくほど綺麗に薄くなります。
-      const backgroundColors = chartType === 'bar' 
-        ? baseColors.slice(0, labels.length).reverse() 
-        : baseColors.slice(0, labels.length);
+      const backgroundColors = baseColors.slice(0, labels.length);
 
       const chartOptions = {
         responsive: true,
@@ -430,15 +415,16 @@
       if (chartType === 'pie') {
         // ★ 円グラフ：大きく拡大
         chartOptions.radius = '90%'; 
-        // ★ 回転角度を真上（-90度）に固定。多い順の配列なので、12時の位置から右回りに並びます。
-        chartOptions.rotation = -90; 
-        chartOptions.layout = { padding: { top: 40, bottom: 40, left: 75, right: 75 } }; 
+        // ★ ご指摘通り rotation: 0 に修正（これで12時の位置から右回りに多い順に並びます）
+        chartOptions.rotation = 0; 
+        // 文字が絶対に重ならないよう、はみ出しエリアのパディングを極限まで確保
+        chartOptions.layout = { padding: { top: 50, bottom: 50, left: 85, right: 85 } }; 
       } else {
         chartOptions.indexAxis = 'y'; 
         chartOptions.layout = { padding: { top: 10, bottom: 10, left: 10, right: 70 } }; 
         
-        // ★ 棒グラフ：Chart.js本来の挙動（下から上）を活かすため、逆転オプション（reverse）は消去。
-        // これにより、配列の末尾（DPS）が一番上に、先頭（その他）が一番下に完璧に並びます。
+        // ★ 棒グラフ：お節介なreverse等を一切廃止。
+        // シンプルに「多い順の配列」を流し込むことで、一番上がDPS（濃い色）になります。
         chartOptions.scales = {
           x: { display: false, grid: { display: false } }, 
           y: { 
