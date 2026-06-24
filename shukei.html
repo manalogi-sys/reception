@@ -8,51 +8,51 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
-    .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
-    h3 { margin-top: 0; font-size: 18px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 15px; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; color: #4b5563; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 10px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
+    .card { background: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
+    h3 { margin-top: 0; font-size: 16px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 10px; }
+    .form-group { margin-bottom: 8px; }
+    .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 3px; color: #4b5563; }
     
     /* 📅 横並びレイアウトの最適化 */
-    .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
+    .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; width: 100%; box-sizing: border-box; }
     .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } 
     .date-separator { font-weight: bold; color: #9ca3af; width: 12%; text-align: center; flex-shrink: 0; }
 
-    /* 📅 日付・セレクトボックス */
+    /* 📅 日付・セレクトボックス（スリム化） */
     input[type="date"] { 
       display: block;
       width: 100%; 
       min-width: 100%;
-      height: 42px; 
-      padding: 10px 4px; 
+      height: 36px; 
+      padding: 6px 4px; 
       border: 1px solid #d1d5db; 
       border-radius: 8px; 
       box-sizing: border-box; 
-      font-size: 14px; 
+      font-size: 13px; 
       background-color: #f9fafb; 
       text-align: center; 
       -webkit-appearance: none; 
     }
-    select { width: 100%; padding: 12px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; height: 44px; }
+    select { width: 100%; padding: 8px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 13px; background-color: #f9fafb; height: 38px; }
     
-    button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    button { width: 100%; padding: 10px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     button:hover { background-color: #059669; }
     .hidden { display: none; }
 
-    /* 📊 グラフエリア（3D風影エフェクト） */
-    .chart-box { max-width: 450px; margin: 30px auto 0 auto; }
+    /* 📊 グラフエリア */
+    .chart-box { max-width: 450px; margin: 15px auto 0 auto; }
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
-    /* KPIテーブルスタイル */
-    .kpi-table { width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 12px 10px; font-size: 14px; text-align: left; font-weight: 600; }
-    .kpi-table td { padding: 14px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 15px; }
+    /* KPIテーブルスタイル（行間圧縮版） */
+    .kpi-table { width: 100%; border-collapse: collapse; margin-top: 8px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 8px 10px; font-size: 13px; text-align: left; font-weight: 600; }
+    .kpi-table td { padding: 8px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 14px; } 
     .kpi-table tr:last-child td { border-bottom: none; }
     .kpi-table tr:nth-child(even) td { background-color: #f9fafb; }
-    .num-col { text-align: right; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; font-size: 16px; color: #111827; }
+    .num-col { text-align: right; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; font-size: 15px; color: #111827; }
     .highlight-row td { background-color: #ecfdf5 !important; color: #065f46; }
-    .highlight-row .num-col { color: #059669; font-size: 18px; }
+    .highlight-row .num-col { color: #059669; font-size: 16px; }
   </style>
 </head>
 <body>
@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 20px;">
+    <div class="form-group" style="margin-top: 15px;">
       <label for="chartFieldSelect">📊 構成比を表示する項目</label>
       <select id="chartFieldSelect" onchange="handleSelectChange()">
         <option value="">選択してください（グラフ非表示）</option>
@@ -120,7 +120,7 @@
       </select>
     </div>
 
-    <button onclick="fetchData()" style="margin-top: 15px;">集計を実行</button>
+    <button onclick="fetchData()" style="margin-top: 10px;">集計を実行</button>
   </div>
 
   <div id="results" class="card hidden">
@@ -163,34 +163,29 @@
       toggleCheckboxes(); 
     });
 
-    // 🔄 セレクトボックスの選択肢を成約状況に合わせて制御するよう修正
     function toggleCheckboxes() {
       const statusFilter = document.getElementById('statusFilter').value;
       const optStatus = document.getElementById('opt-status');
       const optRiyu = document.getElementById('opt-riyu');
       const select = document.getElementById('chartFieldSelect');
 
-      // 「成約状況」が指定されている場合は、「成約or不成約」のグラフは選べないようにする
       if (statusFilter === "指定なし") {
         optStatus.disabled = false;
       } else {
         optStatus.disabled = true;
-        if (select.value === "status") select.value = ""; // 現在選ばれていたら選択解除
+        if (select.value === "status") select.value = ""; 
       }
 
-      // 「成約」の場合は「不成約理由」を選べないようにする
       if (statusFilter === "成約") {
         optRiyu.disabled = true;
-        if (select.value === "riyu") select.value = ""; // 現在選ばれていたら選択解除
+        if (select.value === "riyu") select.value = ""; 
       } else {
         optRiyu.disabled = false;
       }
 
-      // 選択肢が自動で弾かれた場合、グラフを再描画
       if (globalChartsData) { renderPieChart(); }
     }
 
-    // 🔄 セレクトボックスの変更を検知する関数に変更
     function handleSelectChange() {
       if (globalChartsData) { renderPieChart(); }
     }
@@ -245,16 +240,13 @@
       document.getElementById('results').classList.remove('hidden');
     }
 
-    // 🔄 セレクトボックスの値からグラフを生成するようロジックを修正
     function renderPieChart() {
       const select = document.getElementById('chartFieldSelect');
       const selectedKey = select.value;
-      // 選択された項目のテキスト（「年代」など）を取得
       const selectedLabel = select.selectedIndex > 0 ? select.options[select.selectedIndex].text : "";
 
       const container = document.getElementById('chartContainer');
       
-      // 未選択、またはデータがない場合はグラフを隠す
       if (!selectedKey || !globalChartsData || !globalChartsData[selectedKey]) {
         container.classList.add('hidden');
         if (currentChartInstance) currentChartInstance.destroy();
@@ -266,7 +258,7 @@
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
 
       const totalItemsCount = rawArray.length;
-      const threshold = totalItemsCount * 0.02; // 2%の基準
+      const threshold = totalItemsCount * 0.02; 
       
       const processedCounts = {};
       let otherSum = 0;
@@ -276,7 +268,7 @@
         if (cleanKey === 'その他') {
           otherSum += val;
         } else if (val <= threshold) {
-          otherSum += val; // 2%以下はマージ
+          otherSum += val; 
         } else {
           processedCounts[cleanKey] = val;
         }
