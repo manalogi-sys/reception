@@ -58,7 +58,7 @@
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
     /* 📊 KPIテーブルスタイル */
-    .kpi-table { width: 100%; margin-top: 6px; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); table-layout: fixed; }
+    .kpi-table { width: 100%; margin-top: 6px; margin-bottom: 12px; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); table-layout: fixed; }
     
     /* 👑 列の幅を均等（50%ずつ）に設定 */
     .kpi-table th, .kpi-table td { width: 50%; box-sizing: border-box; }
@@ -141,26 +141,7 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 4px;"> 
-      <label for="chartFieldSelect">📊 構成比を表示する項目</label>
-      <select id="chartFieldSelect" onchange="handleSelectChange()">
-        <option value="">選択してください（グラフ非表示）</option>
-        <option value="nyuten">入店時間</option>
-        <option value="nendai">年代</option>
-        <option value="shokugyo">職業</option>
-        <option value="moki">来店動機</option>
-        <option value="hp">HP詳細</option>
-        <option value="hinshu">査定品種別</option>
-        <option value="soba">相場感</option>
-        <option value="aimitsumori">相見積もり</option>
-        <option value="status" id="opt-status">成約or不成約</option>
-        <option value="riyu" id="opt-riyu">不成約理由</option>
-        <option value="oroshisaki">卸先</option>
-        <option value="juho">住所</option>
-      </select>
-    </div>
-
-    <button onclick="fetchData()" style="margin-top: 6px;">集計を実行</button> 
+    <button onclick="fetchData()" style="margin-top: 8px;">集計を実行</button> 
   </div>
 
   <div id="results" class="card hidden">
@@ -181,6 +162,25 @@
         <tr><td class="label-col">見込粗利率</td><td class="num-col" id="lbl-arari-rate" style="color: #059669;">0.0 %</td></tr>
       </tbody>
     </table>
+
+    <div class="form-group" style="margin-top: 10px; border-top: 1px dashed #e5e7eb; padding-top: 10px;"> 
+      <label for="chartFieldSelect" style="color: #374151;">📊 構成比を表示する項目を選択</label>
+      <select id="chartFieldSelect" onchange="handleSelectChange()" style="margin-top: 4px;">
+        <option value="">選択してください（グラフ非表示）</option>
+        <option value="nyuten">入店時間</option>
+        <option value="nendai">年代</option>
+        <option value="shokugyo">職業</option>
+        <option value="moki">来店動機</option>
+        <option value="hp">HP詳細</option>
+        <option value="hinshu">査定品種別</option>
+        <option value="soba">相場感</option>
+        <option value="aimitsumori">相見積もり</option>
+        <option value="status" id="opt-status">成約or不成約</option>
+        <option value="riyu" id="opt-riyu">不成約理由</option>
+        <option value="oroshisaki">卸先</option>
+        <option value="juho">住所</option>
+      </select>
+    </div>
 
     <div id="chartContainer" class="chart-box hidden">
       <canvas id="myPieChart"></canvas>
@@ -251,6 +251,8 @@
           if (data.error) { alert(data.error); return; }
           globalChartsData = data.charts; 
           calculateAndRender(data);
+          
+          // 新しいデータを取得した際は、一旦グラフ選択状態に合わせて再描画（未選択なら非表示を維持）
           renderPieChart(); 
         }).catch(err => alert("通信エラー: " + err));
     }
