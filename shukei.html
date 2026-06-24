@@ -390,7 +390,7 @@
             anchor: 'end',
             align: chartType === 'pie' ? 'end' : 'right',
             // ★ 円グラフの文字被り対策：文字を円からさらに外側（20px）へ離してスペースを確保
-            offset: chartType === 'pie' ? 25 : 4,
+            offset: chartType === 'pie' ? 20 : 4,
             formatter: (value, context) => {
               const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
               const percentage = ((value / total) * 100).toFixed(1);
