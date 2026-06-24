@@ -216,7 +216,6 @@
     let currentChartInstance = null; 
 
     document.addEventListener("DOMContentLoaded", () => {
-      // プラグインの登録は初期化時に1回だけ実行してエラー・警告を防止
       Chart.register(ChartDataLabels);
 
       liff.init({ liffId: "2010292787-uHHgSxXo" })
@@ -328,9 +327,7 @@
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
 
       const totalItemsCount = rawArray.length;
-      
-      // 閾値はご要望通り2%（0.02）に設定
-      const threshold = totalItemsCount * 0.02; 
+      const threshold = totalItemsCount * 0.02; // 2%基準をキープ
       
       const processedCounts = {};
       let otherSum = 0;
@@ -338,7 +335,7 @@
       Object.entries(counts).forEach(([key, val]) => {
         const cleanKey = key.trim();
         
-        // 「査定先無し」および「その他」「空文字」は一括して「その他」に集約
+        // 「査定先無し」および「その他」「空文字」を集約
         if (cleanKey === 'その他' || cleanKey === '査定先無し' || cleanKey === '') {
           otherSum += val;
         } else if (val <= threshold) {
@@ -352,24 +349,13 @@
         processedCounts['その他'] = otherSum;
       }
 
+      // グラフのソートはどちらも直感的な「件数が多い順（降順）」に統一
       let sortedEntries = Object.entries(processedCounts);
-
-      if (chartType === 'bar') {
-        // 横棒グラフ：上が「件数の多い順」、一番下が「その他」
-        // Chart.jsの特性（配列の後ろから順に上に描画）に合わせ、[その他, 少ない順...] にソート
-        sortedEntries.sort((a, b) => {
-          if (a[0] === 'その他') return -1; 
-          if (b[0] === 'その他') return 1;
-          return a[1] - b[1]; 
-        });
-      } else {
-        // 円グラフ：時計回りに「件数の多い順」、最後尾に「その他」
-        sortedEntries.sort((a, b) => {
-          if (a[0] === 'その他') return 1; 
-          if (b[0] === 'その他') return -1;
-          return b[1] - a[1]; 
-        });
-      }
+      sortedEntries.sort((a, b) => {
+        if (a[0] === 'その他') return 1; 
+        if (b[0] === 'その他') return -1;
+        return b[1] - a[1]; 
+      });
 
       const labels = sortedEntries.map(entry => entry[0]);
       const values = sortedEntries.map(entry => entry[1]);
@@ -398,15 +384,41 @@
             padding: { bottom: chartType === 'pie' ? 20 : 10 }
           },
           datalabels: {
-            color: '#1f2937',
+            // ★ 円グラフ文字被り対策：5%未満の小さい項目は、文字色を白にして「内側(center)」に収める
+            color: (context) => {
+              if (chartType === 'pie') {
+                const val = context.dataset.data[context.dataIndex];
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                return (val / total < 0.05) ? '#ffffff' : '#1f2937';
+              }
+              return '#1f2937';
+            },
             font: { weight: 'bold', size: 10 },
             textAlign: 'center',
+            anchor: (context) => {
+              if (chartType === 'pie') {
+                const val = context.dataset.data[context.dataIndex];
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                return (val / total < 0.05) ? 'center' : 'end';
+              }
+              return 'end';
+            },
+            align: (context) => {
+              if (chartType === 'pie') {
+                const val = context.dataset.data[context.dataIndex];
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                return (val / total < 0.05) ? 'center' : 'end';
+              }
+              return 'right';
+            },
+            offset: (context) => (chartType === 'pie') ? 8 : 4,
             formatter: (value, context) => {
               const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
               const percentage = ((value / total) * 100).toFixed(1);
               if (chartType === 'pie') {
                 const label = context.chart.data.labels[context.dataIndex];
-                return `${label}\n${value}件 (${percentage}%)`;
+                // 内側に収める小さい項目は、文字がはみ出ないよう改行をなくして「件数(%)」のみにスマート化
+                return (value / total < 0.05) ? `${value}件\n(${percentage}%)` : `${label}\n${value}件 (${percentage}%)`;
               } else {
                 return `${value}件 (${percentage}%)`;
               }
@@ -416,39 +428,33 @@
       };
 
       if (chartType === 'pie') {
-        // 円自体のサイズを小さく抑え、文字の逃げ道を周囲にしっかり確保
         chartOptions.radius = '65%'; 
         chartOptions.rotation = 0;
         chartOptions.layout = { padding: { top: 30, bottom: 30, left: 65, right: 65 } }; 
-        chartOptions.plugins.datalabels.anchor = 'end';
-        chartOptions.plugins.datalabels.align = 'end';
-        chartOptions.plugins.datalabels.offset = 8;
       } else {
         chartOptions.indexAxis = 'y'; 
         chartOptions.layout = { padding: { top: 10, bottom: 10, left: 10, right: 70 } }; 
-        chartOptions.plugins.datalabels.anchor = 'end';
-        chartOptions.plugins.datalabels.align = 'right';
-        chartOptions.plugins.datalabels.offset = 4;
         
         chartOptions.scales = {
           x: { display: false, grid: { display: false } }, 
           y: { 
             grid: { display: false }, 
+            reverse: true, // ★ 棒グラフ：上から多い順にするために軸を反転！
             ticks: { 
               font: { weight: 'bold', size: 11 },
-              autoSkip: false // ラベルの間引き（ひとつおき表示）を強制的に解除
+              autoSkip: false 
             }
           } 
         };
       }
 
+      // カラーパレット（濃い色から薄い色へ）
       const baseColors = [
         '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
         '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
       ];
       
-      const colorsCopy = [...baseColors].slice(0, labels.length);
-      const backgroundColors = chartType === 'bar' ? colorsCopy : colorsCopy.reverse();
+      const backgroundColors = baseColors.slice(0, labels.length);
 
       currentChartInstance = new Chart(ctx, {
         type: chartType,
