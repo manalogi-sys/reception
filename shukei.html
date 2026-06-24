@@ -345,14 +345,26 @@
         processedCounts['その他'] = otherSum;
       }
 
-      // ★ ソート処理の最適化
-      // 棒グラフも円グラフも、まずは純粋に「件数が多い順（降順）」に並び替え、
-      // かつ「その他」が存在する場合は必ず一番最後（配列の末尾）に配置します。
-      const sortedEntries = Object.entries(processedCounts).sort((a, b) => {
-        if (a[0] === 'その他') return 1;
-        if (b[0] === 'その他') return -1;
-        return b[1] - a[1]; 
-      });
+      // ★ ソートロジックの抜本的修正
+      let sortedEntries = Object.entries(processedCounts);
+
+      if (chartType === 'bar') {
+        // 横棒グラフの場合、下から上に描画される仕様を逆算し、
+        // 「件数が一番少ない順（昇順）」にソートした上で、
+        // かつ「その他」が先頭（＝一番下）にくるように配列を作成します。
+        sortedEntries.sort((a, b) => {
+          if (a[0] === 'その他') return -1;
+          if (b[0] === 'その他') return 1;
+          return a[1] - b[1]; 
+        });
+      } else {
+        // 円グラフは従来どおり「件数が多い順（降順）」、その他は最後尾
+        sortedEntries.sort((a, b) => {
+          if (a[0] === 'その他') return 1;
+          if (b[0] === 'その他') return -1;
+          return b[1] - a[1]; 
+        });
+      }
 
       const labels = sortedEntries.map(entry => entry[0]);
       const values = sortedEntries.map(entry => entry[1]);
@@ -414,25 +426,21 @@
         chartOptions.plugins.datalabels.align = 'right';
         chartOptions.plugins.datalabels.offset = 4;
         
-        // ★ 横棒グラフの軸設定を修正
-        // y軸に `reverse: true` を指定することで、配列の先頭（＝一番多い項目）が
-        // グラフの一番「上」から順番に描画されるようになります。
         chartOptions.scales = {
           x: { display: false, grid: { display: false } }, 
           y: { 
             grid: { display: false }, 
-            ticks: { font: { weight: 'bold', size: 11 } },
-            reverse: true 
+            ticks: { font: { weight: 'bold', size: 11 } }
           } 
         };
       }
 
-      // 配色も上から（一番多いものから）順に濃い色が適用されるようマージ
+      // 横棒グラフ用に配色配列も反転（上のバーほど濃い色を適用するため）
       const baseColors = [
         '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
         '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
       ];
-      const backgroundColors = chartType === 'bar' ? baseColors.slice(0, labels.length) : baseColors.reverse();
+      const backgroundColors = chartType === 'bar' ? baseColors.slice(0, labels.length).reverse() : baseColors.reverse();
 
       currentChartInstance = new Chart(ctx, {
         type: chartType,
