@@ -57,6 +57,11 @@
     .chart-box { max-width: 450px; margin: 15px auto 0 auto; }
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
+    /* 📊 円グラフ用カスタム凡例スタイル */
+    .custom-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px; padding: 10px; background: #f9fafb; border-radius: 8px; border: 1px dashed #e5e7eb; }
+    .legend-item { display: inline-flex; align-items: center; font-size: 11.5px; font-weight: bold; color: #4b5563; }
+    .legend-color { width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; flex-shrink: 0; }
+
     /* 📊 KPIテーブルスタイル */
     .kpi-table { width: 100%; margin-top: 6px; margin-bottom: 12px; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); table-layout: fixed; }
     
@@ -206,6 +211,7 @@
 
     <div id="chartContainer" class="chart-box hidden">
       <canvas id="myPieChart"></canvas>
+      <div id="chartLegend" class="custom-legend hidden"></div>
     </div>
   </div>
 
@@ -310,7 +316,12 @@
       const selectedLabel = select.selectedIndex > 0 ? select.options[select.selectedIndex].text : "";
 
       const container = document.getElementById('chartContainer');
+      const legendContainer = document.getElementById('chartLegend');
       
+      // 初期化
+      legendContainer.innerHTML = "";
+      legendContainer.classList.add('hidden');
+
       if (!selectedKey || !globalChartsData || !globalChartsData[selectedKey]) {
         container.classList.add('hidden');
         if (currentChartInstance) currentChartInstance.destroy();
@@ -327,7 +338,7 @@
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
 
       const totalItemsCount = rawArray.length;
-      const threshold = totalItemsCount * 0.02; // 2%基準をキープ
+      const threshold = totalItemsCount * 0.02; // 2%キープ
       
       const processedCounts = {};
       let otherSum = 0;
@@ -335,7 +346,6 @@
       Object.entries(counts).forEach(([key, val]) => {
         const cleanKey = key.trim();
         
-        // 「査定先無し」および「その他」「空文字」を集約
         if (cleanKey === 'その他' || cleanKey === '査定先無し' || cleanKey === '') {
           otherSum += val;
         } else if (val <= threshold) {
@@ -349,13 +359,23 @@
         processedCounts['その他'] = otherSum;
       }
 
-      // グラフのソートはどちらも直感的な「件数が多い順（降順）」に統一
       let sortedEntries = Object.entries(processedCounts);
-      sortedEntries.sort((a, b) => {
-        if (a[0] === 'その他') return 1; 
-        if (b[0] === 'その他') return -1;
-        return b[1] - a[1]; 
-      });
+
+      // 棒グラフ：[その他 -> 少ない順 -> 一番多い(DPS)] の順で配列化
+      if (chartType === 'bar') {
+        sortedEntries.sort((a, b) => {
+          if (a[0] === 'other' || a[0] === 'その他') return -1; 
+          if (b[0] === 'other' || b[0] === 'その他') return 1;
+          return a[1] - b[1]; 
+        });
+      } else {
+        // 円グラフ：[一番多い -> ... -> 少ない順 -> その他]
+        sortedEntries.sort((a, b) => {
+          if (a[0] === 'その他') return 1; 
+          if (b[0] === 'その他') return -1;
+          return b[1] - a[1]; 
+        });
+      }
 
       const labels = sortedEntries.map(entry => entry[0]);
       const values = sortedEntries.map(entry => entry[1]);
@@ -372,6 +392,15 @@
 
       const ctx = document.getElementById('myPieChart').getContext('2d');
       
+      // 配色定義
+      const baseColors = [
+        '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
+        '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
+      ];
+      const backgroundColors = chartType === 'bar' 
+        ? baseColors.slice(0, labels.length).reverse() 
+        : baseColors.slice(0, labels.length);
+
       const chartOptions = {
         responsive: true,
         maintainAspectRatio: true,
@@ -384,41 +413,23 @@
             padding: { bottom: chartType === 'pie' ? 20 : 10 }
           },
           datalabels: {
-            // ★ 円グラフ文字被り対策：5%未満の小さい項目は、文字色を白にして「内側(center)」に収める
-            color: (context) => {
-              if (chartType === 'pie') {
-                const val = context.dataset.data[context.dataIndex];
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                return (val / total < 0.05) ? '#ffffff' : '#1f2937';
-              }
-              return '#1f2937';
-            },
+            color: '#1f2937',
             font: { weight: 'bold', size: 10 },
             textAlign: 'center',
-            anchor: (context) => {
-              if (chartType === 'pie') {
-                const val = context.dataset.data[context.dataIndex];
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                return (val / total < 0.05) ? 'center' : 'end';
-              }
-              return 'end';
-            },
-            align: (context) => {
-              if (chartType === 'pie') {
-                const val = context.dataset.data[context.dataIndex];
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                return (val / total < 0.05) ? 'center' : 'end';
-              }
-              return 'right';
-            },
-            offset: (context) => (chartType === 'pie') ? 8 : 4,
+            anchor: 'end',
+            align: chartType === 'pie' ? 'end' : 'right',
+            offset: chartType === 'pie' ? 8 : 4,
             formatter: (value, context) => {
               const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
               const percentage = ((value / total) * 100).toFixed(1);
+              
               if (chartType === 'pie') {
+                // ★ 5%未満の小さい項目はグラフ上から文字を消し、非表示にする（文字被り絶対防止）
+                if (value / total < 0.05) {
+                  return null; 
+                }
                 const label = context.chart.data.labels[context.dataIndex];
-                // 内側に収める小さい項目は、文字がはみ出ないよう改行をなくして「件数(%)」のみにスマート化
-                return (value / total < 0.05) ? `${value}件\n(${percentage}%)` : `${label}\n${value}件 (${percentage}%)`;
+                return `${label}\n${value}件 (${percentage}%)`;
               } else {
                 return `${value}件 (${percentage}%)`;
               }
@@ -431,6 +442,30 @@
         chartOptions.radius = '65%'; 
         chartOptions.rotation = 0;
         chartOptions.layout = { padding: { top: 30, bottom: 30, left: 65, right: 65 } }; 
+
+        // ★ グラフ上で非表示にした「小さな項目」を、円グラフの下にリスト化して表示する処理
+        let hasSmallItems = false;
+        let legendHtml = '<div class="custom-legend">';
+        
+        sortedEntries.forEach((entry, idx) => {
+          const percentage = ((entry[1] / totalItemsCount) * 100).toFixed(1);
+          // 5%未満、または「その他」の場合は下にテキスト表示
+          if (entry[1] / totalItemsCount < 0.05 || entry[0] === 'その他') {
+            hasSmallItems = true;
+            const color = backgroundColors[idx];
+            legendHtml += `
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: ${color};"></span>
+                <span>${entry[0]}: ${entry[1]}件(${percentage}%)</span>
+              </div>`;
+          }
+        });
+        legendHtml += '</div>';
+
+        if (hasSmallItems) {
+          legendContainer.innerHTML = legendHtml;
+          legendContainer.classList.remove('hidden');
+        }
       } else {
         chartOptions.indexAxis = 'y'; 
         chartOptions.layout = { padding: { top: 10, bottom: 10, left: 10, right: 70 } }; 
@@ -439,7 +474,6 @@
           x: { display: false, grid: { display: false } }, 
           y: { 
             grid: { display: false }, 
-            reverse: true, // ★ 棒グラフ：上から多い順にするために軸を反転！
             ticks: { 
               font: { weight: 'bold', size: 11 },
               autoSkip: false 
@@ -447,14 +481,6 @@
           } 
         };
       }
-
-      // カラーパレット（濃い色から薄い色へ）
-      const baseColors = [
-        '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
-        '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
-      ];
-      
-      const backgroundColors = baseColors.slice(0, labels.length);
 
       currentChartInstance = new Chart(ctx, {
         type: chartType,
