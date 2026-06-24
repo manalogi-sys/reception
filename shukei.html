@@ -334,7 +334,7 @@
       Object.entries(counts).forEach(([key, val]) => {
         const cleanKey = key.trim();
         
-        if (cleanKey === 'その他' || cleanKey === '査定先無し' || cleanKey === '') {
+        if (cleanKey === 'その他' || cleanKey === '査定先無し' || cleanKey === '不明' || cleanKey === '') {
           otherSum += val;
         } else if (val <= threshold) {
           otherSum += val; 
