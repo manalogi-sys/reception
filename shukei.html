@@ -9,24 +9,24 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 10px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
-    .card { background: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
-    h3 { margin-top: 0; font-size: 16px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 10px; }
-    .form-group { margin-bottom: 8px; }
-    .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 3px; color: #4b5563; }
+    .card { background: white; padding: 10px 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
+    h3 { margin-top: 0; font-size: 16px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 8px; }
+    .form-group { margin-bottom: 6px; } /* ★ 8px -> 6px に縮小 */
+    .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 2px; color: #4b5563; } /* ★下マージンを 3px -> 2px */
     
     /* 📅 横並びレイアウトの最適化 */
-    .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; width: 100%; box-sizing: border-box; }
+    .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; width: 100%; box-sizing: border-box; } /* ★下マージンを 4px -> 0px */
     .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } 
     .date-separator { font-weight: bold; color: #9ca3af; width: 12%; text-align: center; flex-shrink: 0; }
 
-    /* 📅 日付・セレクトボックス（ずれる問題を修正＆さらにスリム化） */
+    /* 📅 日付・セレクトボックス */
     input[type="date"] { 
       display: block;
       width: 100%; 
       min-width: 100%;
       height: 36px; 
-      line-height: 36px; /* ★高さを合わせてテキストを上下中央に固定 */
-      padding: 0 4px; /* ★上下のpaddingを排除して縦ブレを防ぐ */
+      line-height: 36px; 
+      padding: 0 4px; 
       border: 1px solid #d1d5db; 
       border-radius: 8px; 
       box-sizing: border-box; 
@@ -37,7 +37,7 @@
     }
     select { width: 100%; padding: 0 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 13px; background-color: #f9fafb; height: 36px; line-height: 36px; }
     
-    button { width: 100%; padding: 10px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    button { width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; } /* ★上下パディングを 10px -> 8px に圧縮 */
     button:hover { background-color: #059669; }
     .hidden { display: none; }
 
@@ -45,10 +45,10 @@
     .chart-box { max-width: 450px; margin: 15px auto 0 auto; }
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
-    /* 📊 KPIテーブルスタイル（さらに極限まで行間を圧縮） */
+    /* 📊 KPIテーブルスタイル */
     .kpi-table { width: 100%; border-collapse: collapse; margin-top: 8px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 6px 10px; font-size: 13px; text-align: left; font-weight: 600; }
-    .kpi-table td { padding: 5px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13.5px; } /* ★上下paddingを 8px -> 5px に超圧縮 */
+    .kpi-table td { padding: 5px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13.5px; } 
     .kpi-table tr:last-child td { border-bottom: none; }
     .kpi-table tr:nth-child(even) td { background-color: #f9fafb; }
     .num-col { text-align: right; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; font-size: 15px; color: #111827; }
@@ -70,8 +70,7 @@
       </div>
     </div>
 
-    <div class="form-group">
-      <div class="row-layout">
+    <div class="form-group" style="margin-top: 4px;"> <div class="row-layout">
         <div style="width: 31%;">
           <label for="staffFilter" style="font-size: 13px;">担当者</label>
           <select id="staffFilter">
@@ -102,8 +101,7 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 15px;">
-      <label for="chartFieldSelect">📊 構成比を表示する項目</label>
+    <div class="form-group" style="margin-top: 10px;"> <label for="chartFieldSelect">📊 構成比を表示する項目</label>
       <select id="chartFieldSelect" onchange="handleSelectChange()">
         <option value="">選択してください（グラフ非表示）</option>
         <option value="nyuten">入店時間</option>
@@ -121,8 +119,7 @@
       </select>
     </div>
 
-    <button onclick="fetchData()" style="margin-top: 10px;">集計を実行</button>
-  </div>
+    <button onclick="fetchData()" style="margin-top: 8px;">集計を実行</button> </div>
 
   <div id="results" class="card hidden">
     <h3>📊 パフォーマンスサマリー</h3>
@@ -164,6 +161,7 @@
       toggleCheckboxes(); 
     });
 
+    // 成約状況に連動するセレクトボックス制御
     function toggleCheckboxes() {
       const statusFilter = document.getElementById('statusFilter').value;
       const optStatus = document.getElementById('opt-status');
