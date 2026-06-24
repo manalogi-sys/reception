@@ -345,21 +345,13 @@
         processedCounts['その他'] = otherSum;
       }
 
-      // ★ 棒グラフと円グラフのソートロジック
-      // 横棒グラフ(bar)は「上が一番多い順」、円グラフ(pie)は時計回りに「一番多い順」に設定
-      // どちらの場合も「その他」は配列の最後尾に配置されるように調整しています
+      // ★ ソート処理の最適化
+      // 棒グラフも円グラフも、まずは純粋に「件数が多い順（降順）」に並び替え、
+      // かつ「その他」が存在する場合は必ず一番最後（配列の末尾）に配置します。
       const sortedEntries = Object.entries(processedCounts).sort((a, b) => {
         if (a[0] === 'その他') return 1;
         if (b[0] === 'その他') return -1;
-        
-        if (chartType === 'bar') {
-          // Chart.jsの横棒グラフ(y軸)は配列の後ろの要素ほど「上」に表示される特性があるため
-          // 「多い順に上から並べる」ために昇順(a-b)でソートします
-          return a[1] - b[1]; 
-        } else {
-          // 円グラフは時計回りに多い順にするため降順(b-a)
-          return b[1] - a[1]; 
-        }
+        return b[1] - a[1]; 
       });
 
       const labels = sortedEntries.map(entry => entry[0]);
@@ -421,13 +413,21 @@
         chartOptions.plugins.datalabels.anchor = 'end';
         chartOptions.plugins.datalabels.align = 'right';
         chartOptions.plugins.datalabels.offset = 4;
+        
+        // ★ 横棒グラフの軸設定を修正
+        // y軸に `reverse: true` を指定することで、配列の先頭（＝一番多い項目）が
+        // グラフの一番「上」から順番に描画されるようになります。
         chartOptions.scales = {
           x: { display: false, grid: { display: false } }, 
-          y: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 11 } } } 
+          y: { 
+            grid: { display: false }, 
+            ticks: { font: { weight: 'bold', size: 11 } },
+            reverse: true 
+          } 
         };
       }
 
-      // 棒グラフ（bar）の配色が上から順に濃くなるよう調整（ソートを反転させた影響を考慮）
+      // 配色も上から（一番多いものから）順に濃い色が適用されるようマージ
       const baseColors = [
         '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
         '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
