@@ -57,11 +57,6 @@
     .chart-box { max-width: 450px; margin: 15px auto 0 auto; }
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
-    /* 📊 円グラフ用カスタム凡例スタイル */
-    .custom-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px; padding: 10px; background: #f9fafb; border-radius: 8px; border: 1px dashed #e5e7eb; }
-    .legend-item { display: inline-flex; align-items: center; font-size: 11.5px; font-weight: bold; color: #4b5563; }
-    .legend-color { width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; flex-shrink: 0; }
-
     /* 📊 KPIテーブルスタイル */
     .kpi-table { width: 100%; margin-top: 6px; margin-bottom: 12px; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); table-layout: fixed; }
     
@@ -211,7 +206,6 @@
 
     <div id="chartContainer" class="chart-box hidden">
       <canvas id="myPieChart"></canvas>
-      <div id="chartLegend" class="custom-legend hidden"></div>
     </div>
   </div>
 
@@ -316,12 +310,7 @@
       const selectedLabel = select.selectedIndex > 0 ? select.options[select.selectedIndex].text : "";
 
       const container = document.getElementById('chartContainer');
-      const legendContainer = document.getElementById('chartLegend');
       
-      // 初期化
-      legendContainer.innerHTML = "";
-      legendContainer.classList.add('hidden');
-
       if (!selectedKey || !globalChartsData || !globalChartsData[selectedKey]) {
         container.classList.add('hidden');
         if (currentChartInstance) currentChartInstance.destroy();
@@ -361,15 +350,17 @@
 
       let sortedEntries = Object.entries(processedCounts);
 
-      // 棒グラフ：[その他 -> 少ない順 -> 一番多い(DPS)] の順で配列化
+      // ★ 棒グラフと円グラフのソート処理
       if (chartType === 'bar') {
+        // 横棒グラフは【配列の先頭＝一番下、配列の末尾＝一番上】に描画される仕様
+        // 上から「多い順」にするため、[その他 -> 少ない順 -> 一番多い] の昇順に並び替えます
         sortedEntries.sort((a, b) => {
-          if (a[0] === 'other' || a[0] === 'その他') return -1; 
-          if (b[0] === 'other' || b[0] === 'その他') return 1;
+          if (a[0] === 'その他') return -1; 
+          if (b[0] === 'その他') return 1;
           return a[1] - b[1]; 
         });
       } else {
-        // 円グラフ：[一番多い -> ... -> 少ない順 -> その他]
+        // 円グラフは[一番多い -> 少ない順 -> その他] の降順に並べます
         sortedEntries.sort((a, b) => {
           if (a[0] === 'その他') return 1; 
           if (b[0] === 'その他') return -1;
@@ -392,11 +383,13 @@
 
       const ctx = document.getElementById('myPieChart').getContext('2d');
       
-      // 配色定義
+      // カラーパレット（濃い色から薄い色へ）
       const baseColors = [
         '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
         '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
       ];
+      
+      // 棒グラフ（昇順配列）の時はパレットを反転させて末尾（＝一番多い項目）に濃い色を割り当てます
       const backgroundColors = chartType === 'bar' 
         ? baseColors.slice(0, labels.length).reverse() 
         : baseColors.slice(0, labels.length);
@@ -410,7 +403,7 @@
             display: true, 
             text: `【${selectedLabel}】構成比内訳`, 
             font: { size: 15, weight: 'bold' },
-            padding: { bottom: chartType === 'pie' ? 20 : 10 }
+            padding: { bottom: chartType === 'pie' ? 10 : 10 }
           },
           datalabels: {
             color: '#1f2937',
@@ -418,16 +411,12 @@
             textAlign: 'center',
             anchor: 'end',
             align: chartType === 'pie' ? 'end' : 'right',
-            offset: chartType === 'pie' ? 8 : 4,
+            offset: chartType === 'pie' ? 6 : 4,
             formatter: (value, context) => {
               const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
               const percentage = ((value / total) * 100).toFixed(1);
               
               if (chartType === 'pie') {
-                // ★ 5%未満の小さい項目はグラフ上から文字を消し、非表示にする（文字被り絶対防止）
-                if (value / total < 0.05) {
-                  return null; 
-                }
                 const label = context.chart.data.labels[context.dataIndex];
                 return `${label}\n${value}件 (${percentage}%)`;
               } else {
@@ -439,33 +428,12 @@
       };
 
       if (chartType === 'pie') {
-        chartOptions.radius = '65%'; 
-        chartOptions.rotation = 0;
-        chartOptions.layout = { padding: { top: 30, bottom: 30, left: 65, right: 65 } }; 
-
-        // ★ グラフ上で非表示にした「小さな項目」を、円グラフの下にリスト化して表示する処理
-        let hasSmallItems = false;
-        let legendHtml = '<div class="custom-legend">';
-        
-        sortedEntries.forEach((entry, idx) => {
-          const percentage = ((entry[1] / totalItemsCount) * 100).toFixed(1);
-          // 5%未満、または「その他」の場合は下にテキスト表示
-          if (entry[1] / totalItemsCount < 0.05 || entry[0] === 'その他') {
-            hasSmallItems = true;
-            const color = backgroundColors[idx];
-            legendHtml += `
-              <div class="legend-item">
-                <span class="legend-color" style="background-color: ${color};"></span>
-                <span>${entry[0]}: ${entry[1]}件(${percentage}%)</span>
-              </div>`;
-          }
-        });
-        legendHtml += '</div>';
-
-        if (hasSmallItems) {
-          legendContainer.innerHTML = legendHtml;
-          legendContainer.classList.remove('hidden');
-        }
+        // ★ 円グラフを限界まで大きく変更（65%から90%へ大幅拡大）
+        chartOptions.radius = '90%'; 
+        // ★ 開始角度を-90度に調整し、一番シェアの大きい項目が「真上」から始まるように回転
+        chartOptions.rotation = -90; 
+        // 周辺テキストがはみ出ないように余白を多めにキープ
+        chartOptions.layout = { padding: { top: 40, bottom: 40, left: 75, right: 75 } }; 
       } else {
         chartOptions.indexAxis = 'y'; 
         chartOptions.layout = { padding: { top: 10, bottom: 10, left: 10, right: 70 } }; 
