@@ -307,7 +307,6 @@
     function renderPieChart() {
       const select = document.getElementById('chartFieldSelect');
       const selectedKey = select.value;
-      const selectedLabel = select.selectedIndex > 0 ? select.options[select.selectedIndex].text : "";
 
       const container = document.getElementById('chartContainer');
       
@@ -327,7 +326,7 @@
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
 
       const totalItemsCount = rawArray.length;
-      const threshold = totalItemsCount * 0.02; // 2%基準維持
+      const threshold = totalItemsCount * 0.02; 
       
       const processedCounts = {};
       let otherSum = 0;
@@ -348,13 +347,12 @@
         processedCounts['その他'] = otherSum;
       }
 
-      // ★ ソートロジックの抜本修正
-      // 円グラフも棒グラフも、ストレートに「件数が多い順（降順）」に並べ、その他を最後尾にします。
+      // 件数が多い順（降順）にソート、その他を最後尾にする
       let sortedEntries = Object.entries(processedCounts);
       sortedEntries.sort((a, b) => {
         if (a[0] === 'その他') return 1; 
         if (b[0] === 'その他') return -1;
-        return b[1] - a[1]; // 件数が多い順（降順）
+        return b[1] - a[1]; 
       });
 
       const labels = sortedEntries.map(entry => entry[0]);
@@ -372,7 +370,6 @@
 
       const ctx = document.getElementById('myPieChart').getContext('2d');
       
-      // カラーパレット（濃い色から薄い色へ）
       const baseColors = [
         '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
         '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
@@ -383,20 +380,17 @@
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
+          // ★ タイトルはプルダウンと被って見づらいため、円も棒も完全に非表示
+          title: { display: false },
           legend: { display: false }, 
-          title: { 
-            display: true, 
-            text: `【${selectedLabel}】構成比内訳`, 
-            font: { size: 15, weight: 'bold' },
-            padding: { bottom: chartType === 'pie' ? 10 : 10 }
-          },
           datalabels: {
             color: '#1f2937',
             font: { weight: 'bold', size: 10 },
             textAlign: 'center',
             anchor: 'end',
             align: chartType === 'pie' ? 'end' : 'right',
-            offset: chartType === 'pie' ? 6 : 4,
+            // ★ 円グラフの文字被り対策：文字を円からさらに外側（20px）へ離してスペースを確保
+            offset: chartType === 'pie' ? 20 : 4,
             formatter: (value, context) => {
               const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
               const percentage = ((value / total) * 100).toFixed(1);
@@ -413,18 +407,16 @@
       };
 
       if (chartType === 'pie') {
-        // ★ 円グラフ：大きく拡大
+        // 円グラフを大きく表示
         chartOptions.radius = '90%'; 
-        // ★ ご指摘通り rotation: 0 に修正（これで12時の位置から右回りに多い順に並びます）
+        // 12時の位置から時計回りに並べる
         chartOptions.rotation = 0; 
-        // 文字が絶対に重ならないよう、はみ出しエリアのパディングを極限まで確保
-        chartOptions.layout = { padding: { top: 50, bottom: 50, left: 85, right: 85 } }; 
+        // 離した文字が画面外に切れないよう、外側の余白を最大化
+        chartOptions.layout = { padding: { top: 40, bottom: 40, left: 75, right: 75 } }; 
       } else {
         chartOptions.indexAxis = 'y'; 
         chartOptions.layout = { padding: { top: 10, bottom: 10, left: 10, right: 70 } }; 
         
-        // ★ 棒グラフ：お節介なreverse等を一切廃止。
-        // シンプルに「多い順の配列」を流し込むことで、一番上がDPS（濃い色）になります。
         chartOptions.scales = {
           x: { display: false, grid: { display: false } }, 
           y: { 
