@@ -60,32 +60,28 @@
     /* 📊 KPIテーブルスタイル */
     .kpi-table { width: 100%; margin-top: 6px; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); table-layout: fixed; }
     
-    /* 👑 ヘッダー部分（列幅の割り振りと余白調整） */
+    /* 👑 列の幅を均等（50%ずつ）に設定 */
+    .kpi-table th, .kpi-table td { width: 50%; box-sizing: border-box; }
+    
+    /* ヘッダーの余白を左右対称（15%）に設定 */
     .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 5px 10px; font-size: 13px; font-weight: 600; }
-    
-    /* 左列（集計指標）：幅45%にして、左側に大きな余白を作って中央へ寄せる */
-    .kpi-table th:first-child, .kpi-table td:first-child { width: 45%; }
-    .kpi-table th:first-child { text-align: left; padding-left: 20%; }
-    
-    /* 右列（実績値）：幅55%にして、右側に大きな余白を作って中央へ寄せる */
-    .kpi-table th:last-child, .kpi-table td:last-child { width: 55%; }
-    .kpi-table th:last-child { text-align: right; padding-right: 25%; }
+    .kpi-table th:first-child { text-align: left; padding-left: 15%; }
+    .kpi-table th:last-child { text-align: right; padding-right: 15%; }
     
     .kpi-table td { padding: 3px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13.5px; } 
     .kpi-table tr:last-child td { border-bottom: none; }
     .kpi-table tr:nth-child(even) td { background-color: #f9fafb; }
     
-    /* ★集計指標（左列）：左頭揃えのまま、左側に余白（padding-left）を大きく取って右（中央）に寄せました */
+    /* 左右の余白を15%で揃え、中央の文字の間隔を少し広げました */
     .label-col {
       text-align: left;
-      padding-left: 20% !important;
+      padding-left: 15% !important;
       color: #4b5563;
     }
     
-    /* ★実績値（右列）：右揃えのまま、右側に余白（padding-right）を大きく取って左（中央）に寄せました */
     .num-col { 
       text-align: right; 
-      padding-right: 25% !important; 
+      padding-right: 15% !important; 
       font-weight: bold; 
       font-family: "Helvetica Neue", Arial, sans-serif; 
       font-size: 15px; 
@@ -93,7 +89,7 @@
       white-space: nowrap; 
     }
     
-    /* 強調表示行のスタイル調整 */
+    /* 強調表示行 */
     .highlight-row td { background-color: #ecfdf5 !important; }
     .highlight-row .label-col { color: #065f46; font-weight: bold; }
     .highlight-row .num-col { color: #059669; font-size: 16px; }
@@ -340,59 +336,3 @@
       container.classList.remove('hidden');
 
       if (currentChartInstance) { currentChartInstance.destroy(); }
-
-      Chart.register(ChartDataLabels);
-
-      const ctx = document.getElementById('myPieChart').getContext('2d');
-      currentChartInstance = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: values,
-            backgroundColor: [
-              '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
-              '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
-            ],
-            borderWidth: 1.5,
-            borderColor: '#ffffff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          radius: '80%', 
-          rotation: 0, 
-          layout: {
-            padding: { top: 30, bottom: 30, left: 45, right: 45 }
-          },
-          plugins: {
-            legend: { display: false }, 
-            title: { 
-              display: true, 
-              text: `【${selectedLabel}】構成比内訳`, 
-              font: { size: 15, weight: 'bold' },
-              padding: { bottom: 20 }
-            },
-            datalabels: {
-              anchor: 'end',
-              align: 'end',
-              offset: 6, 
-              color: '#1f2937',
-              font: { weight: 'bold', size: 9 },
-              textAlign: 'center',
-              formatter: (value, context) => {
-                const label = context.chart.data.labels[context.dataIndex];
-                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
-                return `${shortLabel}\n${value}件 (${percentage}%)`;
-              }
-            }
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
