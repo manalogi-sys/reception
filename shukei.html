@@ -12,8 +12,8 @@
     
     /* 📅 条件指定カード全体の上下余白を極限まで縮小 */
     .card { background: white; padding: 6px 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
-    h3 { margin-top: 0; font-size: 16px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 4px; } /* ★下マージンを 8px -> 4px */
-    .form-group { margin-bottom: 2px; } /* ★項目間の余白を 6px -> 2px に極限圧縮 */
+    h3 { margin-top: 0; font-size: 16px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 4px; } 
+    .form-group { margin-bottom: 2px; } 
     .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 2px; color: #4b5563; }
     
     /* 📅 横並びレイアウトの最適化 */
@@ -21,25 +21,36 @@
     .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } 
     .date-separator { font-weight: bold; color: #9ca3af; width: 12%; text-align: center; flex-shrink: 0; }
 
-    /* 📅 日付・セレクトボックス */
+    /* 📅 【修正】日付・プルダウンの枠自体の縦幅を 36px -> 28px に大幅に狭くしました（文字サイズは維持） */
     input[type="date"] { 
       display: block;
       width: 100%; 
       min-width: 100%;
-      height: 36px; 
-      line-height: 36px; 
+      height: 28px; /* ★36pxから28pxに縮小 */
+      line-height: 28px; /* ★36pxから28pxに縮小 */
       padding: 0 4px; 
       border: 1px solid #d1d5db; 
-      border-radius: 8px; 
+      border-radius: 6px; 
       box-sizing: border-box; 
-      font-size: 13px; 
+      font-size: 13px; /* ★老眼対策のサイズはそのままキープ */
       background-color: #f9fafb; 
       text-align: center; 
       -webkit-appearance: none; 
     }
-    select { width: 100%; padding: 0 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 13px; background-color: #f9fafb; height: 36px; line-height: 36px; }
+    select { 
+      width: 100%; 
+      padding: 0 4px; 
+      border: 1px solid #d1d5db; 
+      border-radius: 6px; 
+      box-sizing: border-box; 
+      font-size: 13px; /* ★老眼対策のサイズはそのままキープ */
+      background-color: #f9fafb; 
+      height: 28px; /* ★36pxから28pxに縮小 */
+      line-height: 28px; /* ★36pxから28pxに縮小 */
+    }
     
-    button { width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; } 
+    /* ボタンも少し高さを抑えてコンパクトに */
+    button { width: 100%; padding: 6px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; } 
     button:hover { background-color: #059669; }
     .hidden { display: none; }
 
@@ -104,7 +115,8 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 4px;"> <label for="chartFieldSelect">📊 構成比を表示する項目</label>
+    <div class="form-group" style="margin-top: 4px;"> 
+      <label for="chartFieldSelect">📊 構成比を表示する項目</label>
       <select id="chartFieldSelect" onchange="handleSelectChange()">
         <option value="">選択してください（グラフ非表示）</option>
         <option value="nyuten">入店時間</option>
@@ -122,7 +134,8 @@
       </select>
     </div>
 
-    <button onclick="fetchData()" style="margin-top: 6px;">集計を実行</button> </div>
+    <button onclick="fetchData()" style="margin-top: 6px;">集計を実行</button> 
+  </div>
 
   <div id="results" class="card hidden">
     <h3>📊 パフォーマンスサマリー</h3>
