@@ -58,31 +58,34 @@
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
     /* 📊 KPIテーブルスタイル */
-    .kpi-table { width: 100%; margin-top: 6px; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .kpi-table { width: 100%; margin-top: 6px; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); table-layout: fixed; }
     
-    /* 各列の幅を50%ずつに均等割り */
-    .kpi-table th, .kpi-table td { width: 50%; box-sizing: border-box; }
-    
-    /* 👑 ヘッダー部分の中央寄せ調整 */
+    /* 👑 ヘッダー部分（列幅の割り振りと余白調整） */
     .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 5px 10px; font-size: 13px; font-weight: 600; }
-    .kpi-table th:first-child { text-align: right; padding-right: 25px; } /* 左ヘッダーを少し右に */
-    .kpi-table th:last-child { text-align: left; padding-left: 25px; }   /* 右ヘッダーを少し左に */
+    
+    /* 左列（集計指標）：幅45%にして、左側に大きな余白を作って中央へ寄せる */
+    .kpi-table th:first-child, .kpi-table td:first-child { width: 45%; }
+    .kpi-table th:first-child { text-align: left; padding-left: 20%; }
+    
+    /* 右列（実績値）：幅55%にして、右側に大きな余白を作って中央へ寄せる */
+    .kpi-table th:last-child, .kpi-table td:last-child { width: 55%; }
+    .kpi-table th:last-child { text-align: right; padding-right: 25%; }
     
     .kpi-table td { padding: 3px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13.5px; } 
     .kpi-table tr:last-child td { border-bottom: none; }
     .kpi-table tr:nth-child(even) td { background-color: #f9fafb; }
     
-    /* ★集計指標（左列）：文字を右寄せにして、中央に寄せるための余白を追加 */
+    /* ★集計指標（左列）：左頭揃えのまま、左側に余白（padding-left）を大きく取って右（中央）に寄せました */
     .label-col {
-      text-align: right;
-      padding-right: 25px !important;
+      text-align: left;
+      padding-left: 20% !important;
       color: #4b5563;
     }
     
-    /* ★数値（右列）：文字を左寄せにして、中央に寄せるための余白を追加 */
+    /* ★実績値（右列）：右揃えのまま、右側に余白（padding-right）を大きく取って左（中央）に寄せました */
     .num-col { 
-      text-align: left; 
-      padding-left: 25px !important; 
+      text-align: right; 
+      padding-right: 25% !important; 
       font-weight: bold; 
       font-family: "Helvetica Neue", Arial, sans-serif; 
       font-size: 15px; 
