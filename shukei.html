@@ -16,15 +16,15 @@
     
     /* 📅 横並びレイアウトの最適化 */
     .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
-    .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } /* ★サイズを44%に完全固定 */
+    .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } 
     .date-separator { font-weight: bold; color: #9ca3af; width: 12%; text-align: center; flex-shrink: 0; }
 
-    /* 📅 日付（空欄時もサイズが縮まないようガード） */
+    /* 📅 日付・セレクトボックス */
     input[type="date"] { 
       display: block;
       width: 100%; 
       min-width: 100%;
-      height: 42px; /* ★高さを固定して空欄時も形を維持 */
+      height: 42px; 
       padding: 10px 4px; 
       border: 1px solid #d1d5db; 
       border-radius: 8px; 
@@ -34,17 +34,11 @@
       text-align: center; 
       -webkit-appearance: none; 
     }
-    select { width: 100%; padding: 12px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; }
+    select { width: 100%; padding: 12px 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f9fafb; height: 44px; }
     
     button { width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     button:hover { background-color: #059669; }
     .hidden { display: none; }
-
-    /* 🗂️ チェックボックス全体のスタイル */
-    .checkbox-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
-    .checkbox-item { display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .checkbox-item input { margin-right: 8px; transform: scale(1.1); cursor: pointer; }
-    .checkbox-item.disabled { opacity: 0.4; cursor: not-allowed; background: #e5e7eb; }
 
     /* 📊 グラフエリア（3D風影エフェクト） */
     .chart-box { max-width: 450px; margin: 30px auto 0 auto; }
@@ -108,21 +102,22 @@
     </div>
 
     <div class="form-group" style="margin-top: 20px;">
-      <label>📊 構成比を表示（1つ選択）</label>
-      <div class="checkbox-container">
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nyuten" onchange="handleCheckboxChange(this)">入店時間</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="nendai" onchange="handleCheckboxChange(this)">年代</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="shokugyo" onchange="handleCheckboxChange(this)">職業</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="moki" onchange="handleCheckboxChange(this)">来店動機</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="hp" onchange="handleCheckboxChange(this)">HP詳細</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="hinshu" onchange="handleCheckboxChange(this)">査定品種別</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="soba" onchange="handleCheckboxChange(this)">相場感</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="aimitsumori" onchange="handleCheckboxChange(this)">相見積もり</label>
-        <label class="checkbox-item" id="item-status"><input type="checkbox" name="chartGroup" value="status" id="cb-status" onchange="handleCheckboxChange(this)">成約or不成約</label>
-        <label class="checkbox-item" id="item-riyu"><input type="checkbox" name="chartGroup" value="riyu" id="cb-riyu" onchange="handleCheckboxChange(this)">不成約理由</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="oroshisaki" onchange="handleCheckboxChange(this)">卸先</label>
-        <label class="checkbox-item"><input type="checkbox" name="chartGroup" value="juho" onchange="handleCheckboxChange(this)">住所</label>
-      </div>
+      <label for="chartFieldSelect">📊 構成比を表示する項目</label>
+      <select id="chartFieldSelect" onchange="handleSelectChange()">
+        <option value="">選択してください（グラフ非表示）</option>
+        <option value="nyuten">入店時間</option>
+        <option value="nendai">年代</option>
+        <option value="shokugyo">職業</option>
+        <option value="moki">来店動機</option>
+        <option value="hp">HP詳細</option>
+        <option value="hinshu">査定品種別</option>
+        <option value="soba">相場感</option>
+        <option value="aimitsumori">相見積もり</option>
+        <option value="status" id="opt-status">成約or不成約</option>
+        <option value="riyu" id="opt-riyu">不成約理由</option>
+        <option value="oroshisaki">卸先</option>
+        <option value="juho">住所</option>
+      </select>
     </div>
 
     <button onclick="fetchData()" style="margin-top: 15px;">集計を実行</button>
@@ -168,37 +163,35 @@
       toggleCheckboxes(); 
     });
 
+    // 🔄 セレクトボックスの選択肢を成約状況に合わせて制御するよう修正
     function toggleCheckboxes() {
       const statusFilter = document.getElementById('statusFilter').value;
-      const cbStatus = document.getElementById('cb-status');
-      const itemStatus = document.getElementById('item-status');
-      const cbRiyu = document.getElementById('cb-riyu');
-      const itemRiyu = document.getElementById('item-riyu');
+      const optStatus = document.getElementById('opt-status');
+      const optRiyu = document.getElementById('opt-riyu');
+      const select = document.getElementById('chartFieldSelect');
 
+      // 「成約状況」が指定されている場合は、「成約or不成約」のグラフは選べないようにする
       if (statusFilter === "指定なし") {
-        cbStatus.disabled = false;
-        itemStatus.classList.remove('disabled');
+        optStatus.disabled = false;
       } else {
-        cbStatus.disabled = true;
-        cbStatus.checked = false;
-        itemStatus.classList.add('disabled');
+        optStatus.disabled = true;
+        if (select.value === "status") select.value = ""; // 現在選ばれていたら選択解除
       }
 
+      // 「成約」の場合は「不成約理由」を選べないようにする
       if (statusFilter === "成約") {
-        cbRiyu.disabled = true;
-        cbRiyu.checked = false;
-        itemRiyu.classList.add('disabled');
+        optRiyu.disabled = true;
+        if (select.value === "riyu") select.value = ""; // 現在選ばれていたら選択解除
       } else {
-        cbRiyu.disabled = false;
-        itemRiyu.classList.remove('disabled');
+        optRiyu.disabled = false;
       }
+
+      // 選択肢が自動で弾かれた場合、グラフを再描画
+      if (globalChartsData) { renderPieChart(); }
     }
 
-    function handleCheckboxChange(clickedCb) {
-      if (clickedCb.checked) {
-        const checkboxes = document.getElementsByName('chartGroup');
-        checkboxes.forEach(cb => { if (cb !== clickedCb) cb.checked = false; });
-      }
+    // 🔄 セレクトボックスの変更を検知する関数に変更
+    function handleSelectChange() {
       if (globalChartsData) { renderPieChart(); }
     }
 
@@ -252,20 +245,16 @@
       document.getElementById('results').classList.remove('hidden');
     }
 
+    // 🔄 セレクトボックスの値からグラフを生成するようロジックを修正
     function renderPieChart() {
-      const checkboxes = document.getElementsByName('chartGroup');
-      let selectedKey = null;
-      let selectedLabel = "";
-
-      checkboxes.forEach(cb => {
-        if (cb.checked && !cb.disabled) {
-          selectedKey = cb.value;
-          selectedLabel = cb.parentNode.textContent.trim();
-        }
-      });
+      const select = document.getElementById('chartFieldSelect');
+      const selectedKey = select.value;
+      // 選択された項目のテキスト（「年代」など）を取得
+      const selectedLabel = select.selectedIndex > 0 ? select.options[select.selectedIndex].text : "";
 
       const container = document.getElementById('chartContainer');
       
+      // 未選択、またはデータがない場合はグラフを隠す
       if (!selectedKey || !globalChartsData || !globalChartsData[selectedKey]) {
         container.classList.add('hidden');
         if (currentChartInstance) currentChartInstance.destroy();
@@ -336,10 +325,9 @@
         options: {
           responsive: true,
           maintainAspectRatio: true,
-          radius: '80%', // ★グラフ自体を大きくして外側の文字用スペースを拡張
-          rotation: 0, // 0時スタート右回り
+          radius: '80%', 
+          rotation: 0, 
           layout: {
-            // グラフが大きくなった分、文字切れを防ぐため左右のパディングを微調整
             padding: { top: 30, bottom: 30, left: 45, right: 45 }
           },
           plugins: {
@@ -353,7 +341,7 @@
             datalabels: {
               anchor: 'end',
               align: 'end',
-              offset: 6, // ★フチからの距離をわずかに詰めて外側領域を広く使う
+              offset: 6, 
               color: '#1f2937',
               font: { weight: 'bold', size: 9 },
               textAlign: 'center',
