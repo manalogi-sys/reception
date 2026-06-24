@@ -9,13 +9,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 10px; background-color: #f3f4f6; color: #1f2937; margin: 0; }
-    .card { background: white; padding: 10px 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
-    h3 { margin-top: 0; font-size: 16px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 8px; }
-    .form-group { margin-bottom: 6px; } /* ★ 8px -> 6px に縮小 */
-    .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 2px; color: #4b5563; } /* ★下マージンを 3px -> 2px */
+    
+    /* 📅 条件指定カード全体の上下余白を極限まで縮小 */
+    .card { background: white; padding: 6px 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); }
+    h3 { margin-top: 0; font-size: 16px; color: #10b981; border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 4px; } /* ★下マージンを 8px -> 4px */
+    .form-group { margin-bottom: 2px; } /* ★項目間の余白を 6px -> 2px に極限圧縮 */
+    .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 2px; color: #4b5563; }
     
     /* 📅 横並びレイアウトの最適化 */
-    .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; width: 100%; box-sizing: border-box; } /* ★下マージンを 4px -> 0px */
+    .row-layout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; width: 100%; box-sizing: border-box; } 
     .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } 
     .date-separator { font-weight: bold; color: #9ca3af; width: 12%; text-align: center; flex-shrink: 0; }
 
@@ -37,7 +39,7 @@
     }
     select { width: 100%; padding: 0 4px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 13px; background-color: #f9fafb; height: 36px; line-height: 36px; }
     
-    button { width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; } /* ★上下パディングを 10px -> 8px に圧縮 */
+    button { width: 100%; padding: 8px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; } 
     button:hover { background-color: #059669; }
     .hidden { display: none; }
 
@@ -46,9 +48,9 @@
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
     /* 📊 KPIテーブルスタイル */
-    .kpi-table { width: 100%; border-collapse: collapse; margin-top: 8px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 6px 10px; font-size: 13px; text-align: left; font-weight: 600; }
-    .kpi-table td { padding: 5px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13.5px; } 
+    .kpi-table { width: 100%; border-collapse: collapse; margin-top: 6px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 5px 10px; font-size: 13px; text-align: left; font-weight: 600; }
+    .kpi-table td { padding: 3px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13.5px; } 
     .kpi-table tr:last-child td { border-bottom: none; }
     .kpi-table tr:nth-child(even) td { background-color: #f9fafb; }
     .num-col { text-align: right; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; font-size: 15px; color: #111827; }
@@ -70,7 +72,8 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 4px;"> <div class="row-layout">
+    <div class="form-group"> 
+      <div class="row-layout">
         <div style="width: 31%;">
           <label for="staffFilter" style="font-size: 13px;">担当者</label>
           <select id="staffFilter">
@@ -101,7 +104,7 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 10px;"> <label for="chartFieldSelect">📊 構成比を表示する項目</label>
+    <div class="form-group" style="margin-top: 4px;"> <label for="chartFieldSelect">📊 構成比を表示する項目</label>
       <select id="chartFieldSelect" onchange="handleSelectChange()">
         <option value="">選択してください（グラフ非表示）</option>
         <option value="nyuten">入店時間</option>
@@ -119,7 +122,7 @@
       </select>
     </div>
 
-    <button onclick="fetchData()" style="margin-top: 8px;">集計を実行</button> </div>
+    <button onclick="fetchData()" style="margin-top: 6px;">集計を実行</button> </div>
 
   <div id="results" class="card hidden">
     <h3>📊 パフォーマンスサマリー</h3>
@@ -161,7 +164,6 @@
       toggleCheckboxes(); 
     });
 
-    // 成約状況に連動するセレクトボックス制御
     function toggleCheckboxes() {
       const statusFilter = document.getElementById('statusFilter').value;
       const optStatus = document.getElementById('opt-status');
@@ -325,29 +327,4 @@
             legend: { display: false }, 
             title: { 
               display: true, 
-              text: `【${selectedLabel}】構成比内訳`, 
-              font: { size: 15, weight: 'bold' },
-              padding: { bottom: 20 }
-            },
-            datalabels: {
-              anchor: 'end',
-              align: 'end',
-              offset: 6, 
-              color: '#1f2937',
-              font: { weight: 'bold', size: 9 },
-              textAlign: 'center',
-              formatter: (value, context) => {
-                const label = context.chart.data.labels[context.dataIndex];
-                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
-                return `${shortLabel}\n${value}件 (${percentage}%)`;
-              }
-            }
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+              text: `【${selectedLabel}】構成比内訳`,
