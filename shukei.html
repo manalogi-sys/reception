@@ -216,6 +216,9 @@
     let currentChartInstance = null; 
 
     document.addEventListener("DOMContentLoaded", () => {
+      // プラグインの登録は初期化時に1回だけ行う
+      Chart.register(ChartDataLabels);
+
       liff.init({ liffId: "2010292787-uHHgSxXo" })
         .then(() => {
           if (!liff.isLoggedIn()) { liff.login(); }
@@ -345,20 +348,15 @@
         processedCounts['その他'] = otherSum;
       }
 
-      // ★ ソートロジックの抜本的修正
       let sortedEntries = Object.entries(processedCounts);
 
       if (chartType === 'bar') {
-        // 横棒グラフの場合、下から上に描画される仕様を逆算し、
-        // 「件数が一番少ない順（昇順）」にソートした上で、
-        // かつ「その他」が先頭（＝一番下）にくるように配列を作成します。
         sortedEntries.sort((a, b) => {
           if (a[0] === 'その他') return -1;
           if (b[0] === 'その他') return 1;
           return a[1] - b[1]; 
         });
       } else {
-        // 円グラフは従来どおり「件数が多い順（降順）」、その他は最後尾
         sortedEntries.sort((a, b) => {
           if (a[0] === 'その他') return 1;
           if (b[0] === 'その他') return -1;
@@ -379,8 +377,6 @@
 
       if (currentChartInstance) { currentChartInstance.destroy(); }
 
-      Chart.register(ChartDataLabels);
-
       const ctx = document.getElementById('myPieChart').getContext('2d');
       
       const chartOptions = {
@@ -395,7 +391,8 @@
             padding: { bottom: chartType === 'pie' ? 20 : 10 }
           },
           datalabels: {
-            color: '#1f2937',
+            // バーが伸びた際に見えなくならないよう、棒グラフ時は文字色を少し調整
+            color: chartType === 'pie' ? '#1f2937' : '#4b5563',
             font: { weight: 'bold', size: 10 },
             textAlign: 'center',
             formatter: (value, context) => {
@@ -435,12 +432,14 @@
         };
       }
 
-      // 横棒グラフ用に配色配列も反転（上のバーほど濃い色を適用するため）
       const baseColors = [
         '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
         '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
       ];
-      const backgroundColors = chartType === 'bar' ? baseColors.slice(0, labels.length).reverse() : baseColors.reverse();
+      
+      // 元の配列を破壊しないよう、[...baseColors] でシャローコピーを作成して安全に操作
+      const colorsCopy = [...baseColors].slice(0, labels.length);
+      const backgroundColors = chartType === 'bar' ? colorsCopy.reverse() : colorsCopy;
 
       currentChartInstance = new Chart(ctx, {
         type: chartType,
