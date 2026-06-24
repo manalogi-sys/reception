@@ -112,7 +112,7 @@
     }
     .chart-select-container .select-wrapper {
       flex-grow: 1;
-      max-width: 70%; /* 右側に寄りすぎず適度な幅を維持 */
+      max-width: 70%; 
     }
   </style>
 </head>
@@ -316,6 +316,13 @@
         return;
       }
 
+      // ★ 項目によってグラフの種類を自動判定
+      // 選択肢が多く、項目名が長くなりやすい「不成約理由(riyu)」「査定品種別(hinshu)」「来店動機(moki)」を横棒グラフに指定
+      let chartType = 'pie'; 
+      if (selectedKey === 'riyu' || selectedKey === 'hinshu' || selectedKey === 'moki') {
+        chartType = 'bar';
+      }
+
       const rawArray = globalChartsData[selectedKey];
       const counts = {};
       rawArray.forEach(val => { counts[val] = (counts[val] || 0) + 1; });
@@ -341,10 +348,11 @@
         processedCounts['その他'] = otherSum;
       }
 
+      // 棒グラフと円グラフで並び順を最適化 (棒グラフは上が多くなるように)
       const sortedEntries = Object.entries(processedCounts).sort((a, b) => {
-        if (a[0] === 'その他') return 1;
-        if (b[0] === 'その他') return -1;
-        return b[1] - a[1]; 
+        if (a[0] === 'その他') return chartType === 'bar' ? -1 : 1;
+        if (b[0] === 'その他') return chartType === 'bar' ? 1 : -1;
+        return chartType === 'bar' ? a[1] - b[1] : b[1] - a[1]; 
       });
 
       const labels = sortedEntries.map(entry => entry[0]);
@@ -363,8 +371,60 @@
       Chart.register(ChartDataLabels);
 
       const ctx = document.getElementById('myPieChart').getContext('2d');
+      
+      // グラフごとの個別オプション設定
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }, 
+          title: { 
+            display: true, 
+            text: `【${selectedLabel}】構成比内訳`, 
+            font: { size: 15, weight: 'bold' },
+            padding: { bottom: chartType === 'pie' ? 20 : 10 }
+          },
+          datalabels: {
+            color: '#1f2937',
+            font: { weight: 'bold', size: 10 },
+            textAlign: 'center',
+            formatter: (value, context) => {
+              const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              if (chartType === 'pie') {
+                const label = context.chart.data.labels[context.dataIndex];
+                const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
+                return `${shortLabel}\n${value}件 (${percentage}%)`;
+              } else {
+                return `${value}件 (${percentage}%)`;
+              }
+            }
+          }
+        }
+      };
+
+      // 円グラフ(pie)と横棒グラフ(bar)の個別設定をマージ
+      if (chartType === 'pie') {
+        chartOptions.radius = '80%';
+        chartOptions.rotation = 0;
+        chartOptions.layout = { padding: { top: 30, bottom: 30, left: 45, right: 45 } };
+        chartOptions.plugins.datalabels.anchor = 'end';
+        chartOptions.plugins.datalabels.align = 'end';
+        chartOptions.plugins.datalabels.offset = 6;
+      } else {
+        chartOptions.indexAxis = 'y'; // 横棒グラフにする設定
+        chartOptions.layout = { padding: { top: 10, bottom: 10, left: 10, right: 60 } }; // ラベルが右にはみ出ないように右余白を確保
+        chartOptions.plugins.datalabels.anchor = 'end';
+        chartOptions.plugins.datalabels.align = 'right';
+        chartOptions.plugins.datalabels.offset = 4;
+        chartOptions.scales = {
+          x: { display: false, grid: { display: false } }, // X軸の目盛りを非表示
+          y: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 11 } } } // Y軸の項目名を太字に
+        };
+      }
+
       currentChartInstance = new Chart(ctx, {
-        type: 'pie',
+        type: chartType,
         data: {
           labels: labels,
           datasets: [{
@@ -372,44 +432,12 @@
             backgroundColor: [
               '#38296b', '#4d3b8f', '#6451a8', '#7b68c2', '#9380db', 
               '#ab99f0', '#c2b3ff', '#d3c7ff', '#e3dbff', '#f2efff'
-            ],
+            ].reverse(), // 横棒にした際、濃い色が上に来るように反転
             borderWidth: 1.5,
             borderColor: '#ffffff'
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          radius: '80%', 
-          rotation: 0, 
-          layout: {
-            padding: { top: 30, bottom: 30, left: 45, right: 45 }
-          },
-          plugins: {
-            legend: { display: false }, 
-            title: { 
-              display: true, 
-              text: `【${selectedLabel}】構成比内訳`, 
-              font: { size: 15, weight: 'bold' },
-              padding: { bottom: 20 }
-            },
-            datalabels: {
-              anchor: 'end',
-              align: 'end',
-              offset: 6, 
-              color: '#1f2937',
-              font: { weight: 'bold', size: 9 },
-              textAlign: 'center',
-              formatter: (value, context) => {
-                const label = context.chart.data.labels[context.dataIndex];
-                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                const shortLabel = label.length > 7 ? label.slice(0, 6) + '…' : label;
-                return `${shortLabel}\n${value}件 (${percentage}%)`;
-              }
-            }
-          }
-        }
+        options: chartOptions
       });
     }
   </script>
