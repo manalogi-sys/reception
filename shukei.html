@@ -21,18 +21,18 @@
     .row-layout .col { width: 44%; min-width: 44%; max-width: 44%; } 
     .date-separator { font-weight: bold; color: #9ca3af; width: 12%; text-align: center; flex-shrink: 0; }
 
-    /* 📅 【修正】日付・プルダウンの枠自体の縦幅を 36px -> 28px に大幅に狭くしました（文字サイズは維持） */
+    /* 日付・プルダウンの枠自体の縦幅 */
     input[type="date"] { 
       display: block;
       width: 100%; 
       min-width: 100%;
-      height: 28px; /* ★36pxから28pxに縮小 */
-      line-height: 28px; /* ★36pxから28pxに縮小 */
+      height: 28px; 
+      line-height: 28px; 
       padding: 0 4px; 
       border: 1px solid #d1d5db; 
       border-radius: 6px; 
       box-sizing: border-box; 
-      font-size: 13px; /* ★老眼対策のサイズはそのままキープ */
+      font-size: 13px; 
       background-color: #f9fafb; 
       text-align: center; 
       -webkit-appearance: none; 
@@ -43,13 +43,12 @@
       border: 1px solid #d1d5db; 
       border-radius: 6px; 
       box-sizing: border-box; 
-      font-size: 13px; /* ★老眼対策のサイズはそのままキープ */
+      font-size: 13px; 
       background-color: #f9fafb; 
-      height: 28px; /* ★36pxから28pxに縮小 */
-      line-height: 28px; /* ★36pxから28pxに縮小 */
+      height: 28px; 
+      line-height: 28px; 
     }
     
-    /* ボタンも少し高さを抑えてコンパクトに */
     button { width: 100%; padding: 6px; background-color: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; } 
     button:hover { background-color: #059669; }
     .hidden { display: none; }
@@ -58,8 +57,8 @@
     .chart-box { max-width: 450px; margin: 15px auto 0 auto; }
     #myPieChart { filter: drop-shadow(0px 12px 5px rgba(40, 30, 80, 0.22)) drop-shadow(0px 18px 12px rgba(0,0,0,0.12)); }
 
-    /* 📊 KPIテーブルスタイル */
-    .kpi-table { width: 100%; border-collapse: collapse; margin-top: 6px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    /* 📊 KPIテーブルスタイル（横幅を最大320pxに制限し、中央寄せにして間隔を寄せました） */
+    .kpi-table { width: 100%; max-width: 320px; margin: 6px auto 0 auto; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .kpi-table th { background-color: #1f2937; color: #f9fafb; padding: 5px 10px; font-size: 13px; text-align: left; font-weight: 600; }
     .kpi-table td { padding: 3px 10px; background-color: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13.5px; } 
     .kpi-table tr:last-child td { border-bottom: none; }
