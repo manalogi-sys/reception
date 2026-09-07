@@ -100,21 +100,18 @@
             <div class="result-value" id="res-yahoo-advice">-</div>
         </div>
         
-        <a id="marketBtn" href="#" target="_blank">📊 ヤフオク落札相場を直接確認</a>
+        <a id="marketBtn" href="#" target="_blank" style="display: none;">📊 ヤフオク落札相場を直接確認</a>
     </div>
 </div>
 
 <script>
-// ⚠️ 最新のGASウェブアプリURLをここに貼り付けてください
-const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbz7YSvGSsPbIM5bZ_aTlQp0t8ObNlsGEy8qv_yklB8U29jLn2wDmwAiPSZoOriufsDR/exec";
+const GAS_SATEI_URL = "https://script.google.com/macros/s/AKfycbx1usijBw87uSJAwAC4oQLP1sWQPIISP1j5mdrKq_--D7h7eV3m-1zc30zpPhorUwZV/exec";
 
-// 各種データを保持する領域
 let globalLineId = null;
 let selectedFilesArray = [];
 let resultCheckTimer = null;
-let subTimeoutId = null;
 
-// 画面起動時に裏側で自動的にLINE IDを取得完了させておく初期化
+// LINE LIFFの初期化
 window.onload = function() {
     liff.init({ liffId: "2011480421-IuqiIUBK" })
         .then(() => {
@@ -130,21 +127,15 @@ window.onload = function() {
             }
         })
         .catch(err => {
-            alert("LINE初期化エラー: " + err.toString());
+            console.error("LINE初期化エラー: " + err.toString());
         });
 };
 
-// 画像選択ボタンが押された瞬間に、タイマーと画面表示を初期化する関数
+// 表示状態とタイマーの初期化
 function clearAllPreviousState() {
-    console.log("【完全初期化】別件の解析に向けて、裏のタイマーと画面表示をすべて大掃除します。");
-
     if (resultCheckTimer !== null) {
         clearInterval(resultCheckTimer);
         resultCheckTimer = null;
-    }
-    if (subTimeoutId !== null) {
-        clearTimeout(subTimeoutId);
-        subTimeoutId = null;
     }
 
     document.getElementById('res-name').innerText = "-";
@@ -160,6 +151,7 @@ function clearAllPreviousState() {
     document.getElementById('submitBtn').disabled = false;
 }
 
+// ファイル選択時の処理
 function handleFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
     const files = Array.from(input.files);
@@ -184,6 +176,7 @@ function handleFileSelect(input) {
     });
 }
 
+// 画像のリサイズ・Base64変換
 function resizeAndGetBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -215,6 +208,7 @@ function resizeAndGetBase64(file) {
     });
 }
 
+// 分析スタート
 async function startAnalysis() {
     if (selectedFilesArray.length === 0) {
         alert('最低1枚は画像を選んでください！');
@@ -222,7 +216,7 @@ async function startAnalysis() {
     }
 
     if (!globalLineId) {
-        alert('エラー: LINE IDを取得中です。一瞬待ってから再度お試しください。');
+        alert('LINE IDを取得中です。数秒待ってから再度「分析スタート」を押してください。');
         return;
     }
     
@@ -234,11 +228,8 @@ async function startAnalysis() {
     btn.disabled = true;
     loading.style.display = 'block';
     resultBox.style.display = 'none';
-    
-    document.getElementById('loading-text').innerText = "AIが分析しています（約25〜30秒）";
-    
-    checkResultInterval();
-    
+    document.getElementById('loading-text').innerText = "画像を圧縮・送信中...";
+
     try {
         const filesToSend = [];
         for (let i = 0; i < selectedFilesArray.length; i++) {
@@ -247,6 +238,8 @@ async function startAnalysis() {
             filesToSend.push({ image: b64, name: f.name });
         }
         
+        document.getElementById('loading-text').innerText = "AIが分析しています（約10〜15秒）";
+
         const payload = { 
             lineId: globalLineId, 
             comment: comment, 
@@ -254,15 +247,15 @@ async function startAnalysis() {
         };
         const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
         
-        try {
-            await fetch(GAS_SATEI_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                body: formBody
-            });
-        } catch (postError) {
-            console.log("データ送信完了");
-        }
+        // POST送信実行
+        fetch(GAS_SATEI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: formBody
+        }).catch(err => console.log("POST送信完了・非同期処理開始"));
+
+        // すぐにポーリング（結果確認）を開始
+        checkResultInterval();
         
     } catch (error) {
         alert('エラーが発生しました: ' + error.toString());
@@ -271,60 +264,76 @@ async function startAnalysis() {
     }
 }
 
+// ポーリング（結果確認）処理
 function checkResultInterval() {
     let attemptCount = 0;
     
-    if (resultCheckTimer !== null) { clearInterval(resultCheckTimer); resultCheckTimer = null; }
-    if (subTimeoutId !== null) { clearTimeout(subTimeoutId); subTimeoutId = null; }
+    if (resultCheckTimer !== null) { 
+        clearInterval(resultCheckTimer); 
+        resultCheckTimer = null; 
+    }
 
-    subTimeoutId = setTimeout(() => {
-        resultCheckTimer = setInterval(async () => {
-            attemptCount++;
+    // 2秒毎にGASへ問い合わせ
+    resultCheckTimer = setInterval(async () => {
+        attemptCount++;
+        
+        // 最大120秒（60回）待機
+        if (attemptCount > 60) { 
+            clearInterval(resultCheckTimer);
+            resultCheckTimer = null;
+            alert("処理がタイムアウトしました。しばらく経ってから再度お試しください。");
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('loading').style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(GAS_SATEI_URL + "?check=true");
+            const result = await response.json();
             
-            if (attemptCount > 180) { 
-                clearInterval(resultCheckTimer);
-                resultCheckTimer = null;
-                alert("タイムアウトしました。");
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('loading').style.display = 'none';
-                return;
+            if (result.status === "processing") {
+                return; // まだ処理中の場合は次回のインターバルへ
             }
 
-            try {
-                const response = await fetch(GAS_SATEI_URL + "?check=true");
-                const result = await response.json();
+            if (result.status === "success") {
+                clearInterval(resultCheckTimer);
+                resultCheckTimer = null;
                 
-                if (result.status === "success") {
-                    clearInterval(resultCheckTimer);
-                    resultCheckTimer = null;
-                    
-                    document.getElementById('res-name').innerText = result.productName;
-                    document.getElementById('res-purchase-advice').innerText = result.purchase_advice;
-                    document.getElementById('res-price').innerText = result.price_range;
-                    document.getElementById('res-stars').innerText = result.starRating;
-                    document.getElementById('res-yahoo-advice').innerText = result.yahoo_advice;
-                    
-                    const mBtn = document.getElementById('marketBtn');
-                    if (result.searchUrl) { mBtn.href = result.searchUrl; mBtn.style.display = 'block'; } else { mBtn.style.display = 'none'; }
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('submitBtn').disabled = false;
-                    
-                    const rBox = document.getElementById('result-box'); rBox.style.display = 'block'; rBox.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('res-name').innerText = result.productName || "不明";
+                document.getElementById('res-purchase-advice').innerText = result.purchase_advice || "-";
+                document.getElementById('res-price').innerText = result.price_range || "-";
+                document.getElementById('res-stars').innerText = result.starRating || "-";
+                document.getElementById('res-yahoo-advice').innerText = result.yahoo_advice || "-";
+                
+                const mBtn = document.getElementById('marketBtn');
+                if (result.searchUrl) { 
+                    mBtn.href = result.searchUrl; 
+                    mBtn.style.display = 'block'; 
+                } else { 
+                    mBtn.style.display = 'none'; 
                 }
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                
+                const rBox = document.getElementById('result-box'); 
+                rBox.style.display = 'block'; 
+                rBox.scrollIntoView({ behavior: 'smooth' });
+            }
 
-                if (result.status === "error") {
-                    clearInterval(resultCheckTimer);
-                    resultCheckTimer = null;
-                    
-                    alert(result.message || "エラーが発生しました。");
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('submitBtn').disabled = false;
-                }
-            } catch (e) { console.log("応答待ち..."); }
-        }, 1000);
-    }, 20000);
+            if (result.status === "error") {
+                clearInterval(resultCheckTimer);
+                resultCheckTimer = null;
+                
+                alert(result.message || "エラーが発生しました。");
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+            }
+        } catch (e) { 
+            console.log("応答確認中..."); 
+        }
+    }, 2000);
 }
 </script>
 </body>
