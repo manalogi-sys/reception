@@ -26,6 +26,7 @@
         .btn-group { display: flex; gap: 6px; }
         .detail-btn { background-color: #b794f4; color: white; border: none; padding: 8px 10px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; white-space: nowrap; }
         .exhibit-btn { background-color: #dd6b20; color: white; border: none; padding: 8px 10px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+        .cancel-btn { background-color: #e53e3e; color: white; border: none; padding: 8px 10px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; white-space: nowrap; }
         
         /* モーダル */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
@@ -128,7 +129,7 @@ const GAS_SEARCH_URL = "https://script.google.com/macros/s/AKfycbzWTBjlsMk13LvUf
 
 let globalLineId = null;
 let searchResultsData = [];
-let selectedExhibitProductName = "";
+let selectedIndex = null;
 
 // LINE LIFFの初期化
 window.onload = function() {
@@ -197,7 +198,7 @@ async function executeSearch() {
     }
 }
 
-// 検索結果リストの表示
+// 検索結果リストの表示（出品依頼状態に応じてボタン切替）
 function renderList(list) {
     const container = document.getElementById('resultList');
     if (list.length === 0) {
@@ -208,6 +209,15 @@ function renderList(list) {
     list.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'list-item';
+        
+        // 出品依頼状況に応じたボタン生成
+        let actionBtnHtml = '';
+        if (item.isExhibited) {
+            actionBtnHtml = `<button class="cancel-btn" onclick="cancelExhibitRequest(${index})">出品取消</button>`;
+        } else {
+            actionBtnHtml = `<button class="exhibit-btn" onclick="showExhibitModal(${index})">出品依頼</button>`;
+        }
+
         div.innerHTML = `
             <div class="item-info">
                 <div class="item-date">${item.timestamp}</div>
@@ -215,7 +225,7 @@ function renderList(list) {
             </div>
             <div class="btn-group">
                 <button class="detail-btn" onclick="showDetail(${index})">詳細表示</button>
-                <button class="exhibit-btn" onclick="showExhibitModal(${index})">出品依頼</button>
+                ${actionBtnHtml}
             </div>
         `;
         container.appendChild(div);
@@ -243,9 +253,9 @@ function showDetail(index) {
 
 // 出品依頼モーダル表示
 function showExhibitModal(index) {
+    selectedIndex = index;
     const item = searchResultsData[index];
-    selectedExhibitProductName = item.productName || "";
-    document.getElementById('exhibit-product-name').innerText = selectedExhibitProductName;
+    document.getElementById('exhibit-product-name').innerText = item.productName || "";
     document.getElementById('initialPrice').value = '';
     document.getElementById('exhibitModal').style.display = 'flex';
 }
@@ -259,11 +269,12 @@ async function submitExhibitRequest() {
         return;
     }
 
-    if (!globalLineId) {
-        alert("LINE IDを取得できていません。");
+    if (!globalLineId || selectedIndex === null) {
+        alert("エラーが発生しました。再度やり直してください。");
         return;
     }
 
+    const item = searchResultsData[selectedIndex];
     const btn = document.getElementById('submitExhibitBtn');
     btn.disabled = true;
     btn.innerText = "送信中...";
@@ -271,7 +282,7 @@ async function submitExhibitRequest() {
     const payload = {
         action: "request_exhibit",
         lineId: globalLineId,
-        productName: selectedExhibitProductName,
+        productName: item.productName,
         initialPrice: initialPrice
     };
 
@@ -286,6 +297,8 @@ async function submitExhibitRequest() {
 
         if (data.status === "success") {
             alert("出品依頼を送信しました。");
+            item.isExhibited = true; // 内部状態を出品済みに更新
+            renderList(searchResultsData); // リスト表示を更新
             closeModal('exhibitModal');
         } else {
             alert(data.message || "送信に失敗しました。");
@@ -295,6 +308,46 @@ async function submitExhibitRequest() {
     } finally {
         btn.disabled = false;
         btn.innerText = "送信する";
+    }
+}
+
+// 出品取消処理
+async function cancelExhibitRequest(index) {
+    const item = searchResultsData[index];
+
+    if (!confirm(`「${item.productName}」の出品依頼を取り消しますか？`)) {
+        return;
+    }
+
+    if (!globalLineId) {
+        alert("LINE IDを取得できていません。");
+        return;
+    }
+
+    const payload = {
+        action: "cancel_exhibit",
+        lineId: globalLineId,
+        productName: item.productName
+    };
+
+    try {
+        const res = await fetch(GAS_SEARCH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: 'data=' + encodeURIComponent(JSON.stringify(payload))
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+            alert("出品依頼を取り消しました。");
+            item.isExhibited = false; // 内部状態を未出品に更新
+            renderList(searchResultsData); // リスト表示を更新
+        } else {
+            alert(data.message || "取消処理に失敗しました。");
+        }
+    } catch (e) {
+        alert("エラーが発生しました: " + e.toString());
     }
 }
 
