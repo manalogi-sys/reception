@@ -134,52 +134,60 @@ window.onload = function() {
         });
 };
 
-// 🧼 画像選択ボタンが押された瞬間に、裏のゾンビタイマーと画面表示を大掃除する完璧な安全装置
+// 表示状態とタイマーの初期化（ファイル配列はリセットしない）
 function clearAllPreviousState() {
-    console.log("【完全初期化】別件の解析に向けて、裏のタイマーと画面表示をすべて大掃除します。");
-
-    // 1. 裏で動いている1秒連打タイマーを完全に消去
     if (resultCheckTimer !== null) {
         clearInterval(resultCheckTimer);
         resultCheckTimer = null;
     }
-    // 2. もし「20秒待機中」のタイマーが残っていたら、それも強制キャンセル
-    if (subTimeoutId !== null) {
-        clearTimeout(subTimeoutId);
-        subTimeoutId = null;
-    }
 
-    // 3. 画面の表示（前回の査定結果）をすべて空っぽにする
     document.getElementById('res-name').innerText = "-";
     document.getElementById('res-purchase-advice').innerText = "-";
     document.getElementById('res-price').innerText = "-";
     document.getElementById('res-stars').innerText = "-";
     document.getElementById('res-yahoo-advice').innerText = "-";
     
-    // 4. ヤフオクボタンや結果ボックス、ローディング表示も全部隠す（初期状態に戻す）
     document.getElementById('marketBtn').style.display = 'none';
     document.getElementById('result-box').style.display = 'none';
     document.getElementById('loading').style.display = 'none';
     
-    // 5. 送信ボタンをもう一度押せる状態に戻しておく
     document.getElementById('submitBtn').disabled = false;
 }
 
+// ファイル選択・撮影時の処理（順番に追記していく処理）
 function handleFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
-    const files = Array.from(input.files);
-    if (files.length > 6) {
-        alert("一度に選択できるのは最大6枚までです。自動的に最初の6枚が選ばれます。");
-    }
-    selectedFilesArray = files.slice(0, 6);
     
+    const newFiles = Array.from(input.files);
+    
+    // 既存の配列に追加（最大6枚まで）
+    for (let file of newFiles) {
+        if (selectedFilesArray.length < 6) {
+            selectedFilesArray.push(file);
+        } else {
+            alert("画像は最大6枚までしか登録できません。");
+            break;
+        }
+    }
+
+    // 画面上のグリッド描画を更新
+    renderImageGrid();
+
+    // 次回の撮影・選択に備えて input の値をクリア（同じ操作の連続検知用）
+    input.value = "";
+}
+
+// グリッド描画用の共通処理
+function renderImageGrid() {
+    // 1〜6の全ボックスを一度クリア
     for (let i = 1; i <= 6; i++) {
         const box = document.getElementById(`box${i}`);
         const existingImg = box.querySelector('img');
         if (existingImg) existingImg.remove();
         box.querySelector('.icon').style.display = 'block';
     }
-    
+
+    // 保持している配列の順番通りに画像を描画
     selectedFilesArray.forEach((file, index) => {
         const box = document.getElementById(`box${index + 1}`);
         const img = document.createElement('img');
