@@ -36,9 +36,11 @@
         .radio-option { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; color: #2d3748; }
         .inline-input { width: 70px !important; display: inline-block; padding: 4px 8px !important; margin: 0 4px; }
 
-        /* 送信ボタン */
+        /* ボタン */
         .submit-btn { width: 100%; background-color: #38a169; color: white; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
         .submit-btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
+        .cancel-btn { width: 100%; background-color: #e53e3e; color: white; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        .cancel-btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -101,6 +103,7 @@
         </div>
         
         <button class="submit-btn" id="submitUpdateBtn" onclick="submitUpdate()">修正送信</button>
+        <button class="cancel-btn" id="cancelExhibitBtn" onclick="cancelExhibit()">出品取消</button>
     </div>
 </div>
 
@@ -251,7 +254,9 @@ async function submitUpdate() {
     if (!remarks) remarks = "-";
 
     const btn = document.getElementById('submitUpdateBtn');
+    const cancelBtn = document.getElementById('cancelExhibitBtn');
     btn.disabled = true;
+    cancelBtn.disabled = true;
     btn.innerText = "送信中...";
 
     const payload = {
@@ -284,7 +289,55 @@ async function submitUpdate() {
         alert("エラーが発生しました: " + e.toString());
     } finally {
         btn.disabled = false;
+        cancelBtn.disabled = false;
         btn.innerText = "修正送信";
+    }
+}
+
+// 出品取消処理
+async function cancelExhibit() {
+    if (selectedIndex === null) return;
+
+    const item = exhibitListData[selectedIndex];
+
+    if (!confirm(`「${item.productName}」の出品依頼を取り消しますか？`)) {
+        return;
+    }
+
+    const btn = document.getElementById('submitUpdateBtn');
+    const cancelBtn = document.getElementById('cancelExhibitBtn');
+    btn.disabled = true;
+    cancelBtn.disabled = true;
+    cancelBtn.innerText = "処理中...";
+
+    const payload = {
+        action: "cancel_exhibit",
+        lineId: globalLineId,
+        rowIndex: item.rowIndex
+    };
+
+    try {
+        const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: 'data=' + encodeURIComponent(JSON.stringify(payload))
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+            alert("出品依頼を取り消しました。");
+            closeModal();
+            fetchExhibitList(); // 再読み込みして最新化
+        } else {
+            alert(data.message || "取消処理に失敗しました。");
+        }
+    } catch (e) {
+        alert("エラーが発生しました: " + e.toString());
+    } finally {
+        btn.disabled = false;
+        cancelBtn.disabled = false;
+        cancelBtn.innerText = "出品取消";
     }
 }
 
