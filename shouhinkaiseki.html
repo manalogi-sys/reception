@@ -131,7 +131,7 @@ window.onload = function() {
         });
 };
 
-// 表示状態とタイマーの初期化
+// 表示状態とタイマーの初期化（ファイル配列はリセットしない）
 function clearAllPreviousState() {
     if (resultCheckTimer !== null) {
         clearInterval(resultCheckTimer);
@@ -151,22 +151,40 @@ function clearAllPreviousState() {
     document.getElementById('submitBtn').disabled = false;
 }
 
-// ファイル選択時の処理
+// ファイル選択・撮影時の処理（順番に追記していく処理）
 function handleFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
-    const files = Array.from(input.files);
-    if (files.length > 6) {
-        alert("一度に選択できるのは最大6枚までです。自動的に最初の6枚が選ばれます。");
-    }
-    selectedFilesArray = files.slice(0, 6);
     
+    const newFiles = Array.from(input.files);
+    
+    // 既存の配列に追加（最大6枚まで）
+    for (let file of newFiles) {
+        if (selectedFilesArray.length < 6) {
+            selectedFilesArray.push(file);
+        } else {
+            alert("画像は最大6枚までしか登録できません。");
+            break;
+        }
+    }
+
+    // 画面上のグリッド描画を更新
+    renderImageGrid();
+
+    // 次回の撮影・選択に備えて input の値をクリア（同じ操作の連続検知用）
+    input.value = "";
+}
+
+// グリッド描画用の共通処理
+function renderImageGrid() {
+    // 1〜6の全ボックスを一度クリア
     for (let i = 1; i <= 6; i++) {
         const box = document.getElementById(`box${i}`);
         const existingImg = box.querySelector('img');
         if (existingImg) existingImg.remove();
         box.querySelector('.icon').style.display = 'block';
     }
-    
+
+    // 保持している配列の順番通りに画像を描画
     selectedFilesArray.forEach((file, index) => {
         const box = document.getElementById(`box${index + 1}`);
         const img = document.createElement('img');
