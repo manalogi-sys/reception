@@ -11,7 +11,8 @@
         h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 20px; font-weight: 700; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 13px; color: #4a5568; }
-        input[type="date"], input[type="text"], input[type="number"] { width: 100%; padding: 10px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        input[type="date"], input[type="text"], input[type="number"], textarea { width: 100%; padding: 10px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        textarea { resize: vertical; min-height: 70px; }
         .date-range { display: flex; gap: 8px; align-items: center; }
         .search-btn { width: 100%; background-color: #3182ce; color: white; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
         .search-btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
@@ -41,6 +42,10 @@
         .price-highlight { font-size: 22px; color: #e53e3e; font-weight: bold; }
         #marketBtn { display: block; width: 100%; text-align: center; box-sizing: border-box; background-color: #38a169; color: white; text-decoration: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; margin-top: 15px; }
         
+        /* ラジオボタンエリア */
+        .radio-option { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; color: #2d3748; }
+        .inline-input { width: 70px !important; display: inline-block; padding: 4px 8px !important; margin: 0 4px; }
+
         /* 送信ボタン */
         .submit-btn { width: 100%; background-color: #38a169; color: white; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
         .submit-btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
@@ -117,7 +122,37 @@
 
         <div class="form-group">
             <label>💰 初期出品価格（任意）</label>
-            <input type="number" id="initialPrice" placeholder="未入力でも送信可能です">
+            <input type="number" id="initialPrice" placeholder="例: 15000">
+        </div>
+
+        <div class="form-group">
+            <label>⚙️ 初回以降価格設定（任意）</label>
+            <div class="radio-option">
+                <input type="radio" id="priceStrategy1" name="priceStrategy" value="maintain" checked>
+                <label for="priceStrategy1" style="display:inline; margin:0; font-weight:normal;">初期価格を維持</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="priceStrategy2" name="priceStrategy" value="discount">
+                <label for="priceStrategy2" style="display:inline; margin:0; font-weight:normal;">初期価格から</label>
+                <input type="number" id="discountPercent" class="inline-input" placeholder="10" oninput="document.getElementById('priceStrategy2').checked = true;">
+                <span>％ずつ下げる</span>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="priceStrategy3" name="priceStrategy" value="omakase">
+                <label for="priceStrategy3" style="display:inline; margin:0; font-weight:normal;">おまかせ 最低出品価格</label>
+                <input type="number" id="minPrice" class="inline-input" style="width: 90px !important;" placeholder="5000" oninput="document.getElementById('priceStrategy3').checked = true;">
+                <span>円</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>📦 商品数（複数個ある場合に入力）</label>
+            <input type="number" id="itemQuantity" placeholder="例: 2">
+        </div>
+
+        <div class="form-group">
+            <label>📝 備考</label>
+            <textarea id="itemRemarks" placeholder="特記事項があれば入力してください"></textarea>
         </div>
         
         <button class="submit-btn" id="submitExhibitBtn" onclick="submitExhibitRequest()">送信する</button>
@@ -125,7 +160,7 @@
 </div>
 
 <script>
-const GAS_SEARCH_URL = "https://script.google.com/macros/s/AKfycbzWTBjlsMk13LvUfiq2pr0PZ2-UPyKD-8Bmi2lc6OFkNckNrBhTsjJKZnqFVb0fV2JR/exec";
+const GAS_SEARCH_URL = "https://script.google.com/macros/s/AKfycbx1usijBw87uSJAwAC4oQLP1sWQPIISP1j5mdrKq_--D7h7eV3m-1zc30zpPhorUwZV/exec";
 
 let globalLineId = null;
 let searchResultsData = [];
@@ -258,15 +293,35 @@ function showExhibitModal(index) {
     const item = searchResultsData[index];
     document.getElementById('exhibit-product-name').innerText = item.productName || "";
     document.getElementById('initialPrice').value = '';
+    document.getElementById('priceStrategy1').checked = true;
+    document.getElementById('discountPercent').value = '';
+    document.getElementById('minPrice').value = '';
+    document.getElementById('itemQuantity').value = '';
+    document.getElementById('itemRemarks').value = '';
     document.getElementById('exhibitModal').style.display = 'flex';
 }
 
-// 出品依頼送信処理（未入力OK・送信後に出品取消ボタンへ切り替え）
+// 出品依頼送信処理
 async function submitExhibitRequest() {
     let initialPrice = document.getElementById('initialPrice').value.trim();
-    if (!initialPrice) {
-        initialPrice = "-";
+    if (!initialPrice) initialPrice = "-";
+
+    // 初回以降価格設定の文字列生成
+    let priceStrategyText = "初期価格を維持";
+    const selectedStrategy = document.querySelector('input[name="priceStrategy"]:checked').value;
+    if (selectedStrategy === "discount") {
+        const percent = document.getElementById('discountPercent').value.trim();
+        priceStrategyText = percent ? `初期価格から${percent}%ずつ下げる` : "初期価格から値下げ";
+    } else if (selectedStrategy === "omakase") {
+        const minP = document.getElementById('minPrice').value.trim();
+        priceStrategyText = minP ? `おまかせ（最低価格: ${minP}円）` : "おまかせ";
     }
+
+    let quantity = document.getElementById('itemQuantity').value.trim();
+    if (!quantity) quantity = "1";
+
+    let remarks = document.getElementById('itemRemarks').value.trim();
+    if (!remarks) remarks = "-";
 
     if (!globalLineId || selectedIndex === null) {
         alert("エラーが発生しました。再度やり直してください。");
@@ -282,7 +337,10 @@ async function submitExhibitRequest() {
         action: "request_exhibit",
         lineId: globalLineId,
         productName: item.productName,
-        initialPrice: initialPrice
+        initialPrice: initialPrice,
+        priceStrategy: priceStrategyText,
+        quantity: quantity,
+        remarks: remarks
     };
 
     try {
