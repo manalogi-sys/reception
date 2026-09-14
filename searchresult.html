@@ -357,6 +357,8 @@ async function submitExhibitRequest() {
             item.isExhibited = true;
             renderList(searchResultsData);
             closeModal('exhibitModal');
+        } else if (data.status === "uncontracted") {
+            alert(data.message);
         } else {
             alert(data.message || "送信に失敗しました。");
         }
