@@ -14,6 +14,11 @@
         input[type="date"], input[type="text"], input[type="number"], textarea { width: 100%; padding: 10px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         textarea { resize: vertical; min-height: 70px; }
         .date-range { display: flex; gap: 8px; align-items: center; }
+
+        /* 期間クイック選択ボタン */
+        .quick-range { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .quick-btn { flex: 1 1 auto; min-width: 56px; background: #ebf4ff; color: #2b6cb0; border: 1px solid #bee3f8; padding: 8px 6px; font-size: 13px; font-weight: bold; border-radius: 20px; cursor: pointer; white-space: nowrap; }
+        .quick-btn.active { background: #3182ce; color: #fff; border-color: #3182ce; }
         .search-btn { width: 100%; background-color: #3182ce; color: white; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
         .search-btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
         #loading { display: none; text-align: center; margin-top: 15px; font-weight: bold; color: #4a5568; }
@@ -62,6 +67,13 @@
             <input type="date" id="startDate">
             <span>〜</span>
             <input type="date" id="endDate">
+        </div>
+        <div class="quick-range" id="quickRange">
+            <button type="button" class="quick-btn" data-range="today">今日</button>
+            <button type="button" class="quick-btn" data-range="yesterday">昨日</button>
+            <button type="button" class="quick-btn" data-range="3days">過去3日</button>
+            <button type="button" class="quick-btn" data-range="1week">過去1週間</button>
+            <button type="button" class="quick-btn" data-range="1month">過去1ヶ月</button>
         </div>
     </div>
     
@@ -181,6 +193,54 @@ window.onload = function() {
         })
         .catch(err => console.error("LINE初期化エラー: " + err.toString()));
 };
+
+// 日付を yyyy-mm-dd 形式に（端末のローカル時刻で計算）
+function formatDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+// 期間クイック選択：日付欄に入れてそのまま抽出
+function applyQuickRange(range) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let start = new Date(today);
+    let end = new Date(today);
+
+    if (range === 'yesterday') {
+        start.setDate(today.getDate() - 1);
+        end.setDate(today.getDate() - 1);
+    } else if (range === '3days') {
+        start.setDate(today.getDate() - 2);   // 今日を含めて3日間
+    } else if (range === '1week') {
+        start.setDate(today.getDate() - 6);   // 今日を含めて7日間
+    } else if (range === '1month') {
+        start.setMonth(today.getMonth() - 1); // 1ヶ月前の同じ日〜今日
+        if (start.getDate() !== today.getDate()) start.setDate(0); // 3/31→2/31のような存在しない日は月末に
+    }
+
+    document.getElementById('startDate').value = formatDate(start);
+    document.getElementById('endDate').value = formatDate(end);
+
+    document.querySelectorAll('.quick-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.range === range);
+    });
+
+    executeSearch();
+}
+
+document.querySelectorAll('.quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyQuickRange(btn.dataset.range));
+});
+
+// 日付を手入力したらクイック選択の強調を外す
+['startDate', 'endDate'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+        document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+    });
+});
 
 // 検索実行
 async function executeSearch() {
