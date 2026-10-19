@@ -70,8 +70,6 @@
         </div>
         <div class="quick-range" id="quickRange">
             <button type="button" class="quick-btn" data-range="today">今日</button>
-            <button type="button" class="quick-btn" data-range="yesterday">昨日</button>
-            <button type="button" class="quick-btn" data-range="3days">過去3日</button>
             <button type="button" class="quick-btn" data-range="1week">過去1週間</button>
             <button type="button" class="quick-btn" data-range="1month">過去1ヶ月</button>
         </div>
@@ -209,16 +207,14 @@ function applyQuickRange(range) {
     let start = new Date(today);
     let end = new Date(today);
 
-    if (range === 'yesterday') {
-        start.setDate(today.getDate() - 1);
-        end.setDate(today.getDate() - 1);
-    } else if (range === '3days') {
-        start.setDate(today.getDate() - 2);   // 今日を含めて3日間
-    } else if (range === '1week') {
-        start.setDate(today.getDate() - 6);   // 今日を含めて7日間
+    if (range === '1week') {
+        // 今日を含めた7日間（例: 10/20 → 10/14〜10/20）
+        start.setDate(today.getDate() - 6);
     } else if (range === '1month') {
-        start.setMonth(today.getMonth() - 1); // 1ヶ月前の同じ日〜今日
+        // 今日を含めた1ヶ月（例: 10/20 → 9/21〜10/20）
+        start.setMonth(today.getMonth() - 1);
         if (start.getDate() !== today.getDate()) start.setDate(0); // 3/31→2/31のような存在しない日は月末に
+        start.setDate(start.getDate() + 1);
     }
 
     document.getElementById('startDate').value = formatDate(start);
