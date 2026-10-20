@@ -111,6 +111,17 @@ let globalLineId = null;
 let selectedFilesArray = [];
 let resultCheckTimer = null;
 
+// 送信ごとに一意のIDを作る（このIDの結果だけを受け取るため）
+function createRequestId() {
+    if (window.crypto && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    // 古い端末向けの予備
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // LINE LIFFの初期化
 window.onload = function() {
     liff.init({ liffId: "2011480421-IuqiIUBK" })
@@ -258,8 +269,10 @@ async function startAnalysis() {
         
         document.getElementById('loading-text').innerText = "AIが分析しています（約20〜30秒）";
 
-        const payload = { 
-            lineId: globalLineId, 
+        const requestId = createRequestId();
+        const payload = {
+            requestId: requestId,
+            lineId: globalLineId,
             comment: comment, 
             files: filesToSend 
         };
@@ -273,8 +286,8 @@ async function startAnalysis() {
         }).catch(err => console.log("POST送信完了・非同期処理開始"));
 
         // すぐにポーリング（結果確認）を開始
-        checkResultInterval();
-        
+        checkResultInterval(requestId);
+
     } catch (error) {
         alert('エラーが発生しました: ' + error.toString());
         btn.disabled = false;
@@ -283,7 +296,7 @@ async function startAnalysis() {
 }
 
 // ポーリング（結果確認）処理
-function checkResultInterval() {
+function checkResultInterval(requestId) {
     let attemptCount = 0;
     
     if (resultCheckTimer !== null) { 
@@ -306,7 +319,7 @@ function checkResultInterval() {
         }
 
         try {
-            const response = await fetch(GAS_SATEI_URL + "?check=true");
+            const response = await fetch(GAS_SATEI_URL + "?check=true&requestId=" + encodeURIComponent(requestId), { cache: "no-store" });
             const result = await response.json();
             
             if (result.status === "processing") {
