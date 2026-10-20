@@ -114,6 +114,16 @@ let selectedFilesArray = [];
 let resultCheckTimer = null;
 let subTimeoutId = null;
 
+// 送信ごとに一意のIDを作る（このIDの結果だけを受け取るため）
+function createRequestId() {
+    if (window.crypto && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // ✨ 画面起動時に裏側で自動的にLINE IDを取得完了させておく安全な初期化
 window.onload = function() {
     liff.init({ liffId: "2010292787-FQhvWvUm" })
@@ -251,7 +261,8 @@ async function startAnalysis() {
     document.getElementById('loading-text').innerText = "AIが分析しています（約25〜30秒）";
     
     // GASへの送信を待たずに、ボタンを押した「この瞬間」から20秒タイマーを裏で動かし始める！
-    checkResultInterval();
+    const requestId = createRequestId();
+    checkResultInterval(requestId);
     
     try {
         const filesToSend = [];
@@ -262,6 +273,7 @@ async function startAnalysis() {
         }
         
         const payload = { 
+            requestId: requestId,
             lineId: globalLineId, 
             comment: comment, 
             files: filesToSend 
@@ -285,7 +297,7 @@ async function startAnalysis() {
     }
 }
 
-function checkResultInterval() {
+function checkResultInterval(requestId) {
     let attemptCount = 0;
     
     if (resultCheckTimer !== null) { clearInterval(resultCheckTimer); resultCheckTimer = null; }
@@ -305,7 +317,7 @@ function checkResultInterval() {
             }
 
             try {
-                const response = await fetch(GAS_SATEI_URL + "?check=true");
+                const response = await fetch(GAS_SATEI_URL + "?check=true&requestId=" + encodeURIComponent(requestId), { cache: "no-store" });
                 const result = await response.json();
                 
                 if (result.status === "success") {
@@ -325,6 +337,14 @@ function checkResultInterval() {
                     document.getElementById('submitBtn').disabled = false;
                     
                     const rBox = document.getElementById('result-box'); rBox.style.display = 'block'; rBox.scrollIntoView({ behavior: 'smooth' });
+                }
+
+                if (result.status === "error") {
+                    clearInterval(resultCheckTimer);
+                    resultCheckTimer = null;
+                    alert(result.message || "エラーが発生しました。");
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
                 }
             } catch (e) { console.log("応答待ち..."); }
         }, 1000);
