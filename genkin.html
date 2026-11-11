@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>現金出納帳入力フォーム</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="rm-auth.js"></script>
     <style>
         body { font-family: sans-serif; padding: 15px; background: #f4f5f7; color: #333; }
         .balance-box { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
@@ -60,7 +61,7 @@
 
     <script>
         const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbx_ScIvezM3a5XGmTtyocpjFV-POnnaRHw8KbLbqT_K9hejLRuL6V1AaMoN_t5liylHpQ/exec"; // あなたのGASのWebアプリURL
-        let userId = "TEST_USER"; // 開発テスト用初期値
+        let userId = "";
 
         // 出金・入金のプルダウン選択肢
         const options = {
@@ -99,16 +100,16 @@
             })
             .catch((err) => {
                 console.error("LIFF Init Failed", err);
-                // テスト環境などでLIFF外から開いたとき用
-                fetchBalance(userId);
+                document.getElementById('currentBalance').textContent = "LINEから開いてください";
             });
         });
 
-        // GASのdoGetから現在の残高を取得する関数
+        // GASから現在の残高を取得する関数(本人証明書を付けて POST で送る)
         function fetchBalance(id) {
-            fetch(`${GAS_WEBAPP_URL}?userId=${id}`)
+            postToGas(GAS_WEBAPP_URL, { action: "balance", lineId: id })
             .then(res => res.json())
             .then(data => {
+                if (isAuthError(data)) return;
                 if(data.status === "success") {
                     // 金額を3桁カンマ区切りにして表示
                     document.getElementById('currentBalance').textContent = "¥ " + Number(data.balance).toLocaleString();
@@ -127,7 +128,8 @@
             e.preventDefault();
     
             const formData = {
-                userId: userId,
+                action: "add",
+                lineId: userId,
                 date: document.getElementById('date').value,
                 transaction: document.querySelector('input[name="transaction"]:checked').value,
                 summary: document.getElementById('summary').value,
@@ -135,20 +137,19 @@
                 remarks: document.getElementById('remarks').value
             };
 
-            const params = new URLSearchParams();
-            Object.keys(formData).forEach(key => params.append(key, formData[key]));
-
             // ボタンを連打できないように無効化
             const btn = document.querySelector('button');
             btn.disabled = true;
             btn.textContent = "送信中...";
 
-            fetch(GAS_WEBAPP_URL, {
-                method: "POST",
-                body: params
-            })
+            postToGas(GAS_WEBAPP_URL, formData)
             .then(res => res.json()) // GASからの返却値をJSONとしてパースする
             .then(resData => {
+                if (isAuthError(resData)) {
+                    btn.disabled = false;
+                    btn.textContent = "スプレッドシートへ登録";
+                    return;
+                }
                 if (resData.status === "success") {
                     alert("スプレッドシートへの登録が完了しました！");
                     liff.closeWindow();
