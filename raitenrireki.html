@@ -143,6 +143,7 @@
         }
     </style>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="rm-auth.js"></script>
 </head>
 <body>
 
@@ -201,10 +202,12 @@
             currentImages = {}; 
 
             try {
-                const response = await fetch(`${GAS_URL}?name=${encodeURIComponent(name)}&userId=${userLineId}`);
+                const response = await postToGas(GAS_URL, { name: name, lineId: userLineId });
                 const data = await response.json();
 
                 loading.style.display = "none";
+
+                if (isAuthError(data)) return;
 
                 if (data.error) {
                     resultContainer.innerHTML = `<p class='error-msg'>${data.error}</p>`;

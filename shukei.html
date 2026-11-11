@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>来客データ状況ダッシュボード</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="rm-auth.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <style>
@@ -264,14 +265,11 @@
       if (!start || !end) { alert('期間を選択してください。'); return; }
       if (!userId) { alert('LINEユーザー情報を取得中です。しばらく待ってから再度押してください。'); return; }
 
-      const url = `${GAS_API_URL}?userId=${userId}&start=${start}&end=${end}` + 
-                  `&staff=${encodeURIComponent(staff)}` + 
-                  `&gender=${encodeURIComponent(gender)}` + 
-                  `&status=${encodeURIComponent(status)}`;
-
-      fetch(url)
+      // 本人証明書を付けて POST で送る
+      postToGas(GAS_API_URL, { lineId: userId, start: start, end: end, staff: staff, gender: gender, status: status })
         .then(res => res.json())
         .then(data => {
+          if (isAuthError(data)) return;
           if (data.error) { alert(data.error); return; }
           globalChartsData = data.charts; 
           calculateAndRender(data);

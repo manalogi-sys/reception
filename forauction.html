@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商品分析・査定サポート</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="rm-auth.js"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; padding: 15px; color: #333; margin: 0; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
@@ -278,7 +279,8 @@ async function startAnalysis() {
             comment: comment, 
             files: filesToSend 
         };
-        const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
+        // 本人証明書を付けて送る(結果は下の checkResultInterval で取りに行く)
+        const formBody = 'data=' + encodeURIComponent(JSON.stringify(withIdToken(payload)));
         
         try {
             await fetch(GAS_SATEI_URL, {
@@ -319,7 +321,17 @@ function checkResultInterval(requestId) {
             try {
                 const response = await fetch(GAS_SATEI_URL + "?check=true&requestId=" + encodeURIComponent(requestId), { cache: "no-store" });
                 const result = await response.json();
-                
+
+                // 本人確認できなかったときは、待つのをやめてLINEに入り直す
+                if (result.status === "auth_error") {
+                    clearInterval(resultCheckTimer);
+                    resultCheckTimer = null;
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
+                    isAuthError(result);
+                    return;
+                }
+
                 if (result.status === "success") {
                     clearInterval(resultCheckTimer);
                     resultCheckTimer = null;

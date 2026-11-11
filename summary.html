@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>本日の買取サマリー</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="rm-auth.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -200,9 +201,11 @@ async function initializeLiff() {
 
 async function fetchSummary(lineId) {
     try {
-        const response = await fetch(`${GAS_API_URL}?lineId=${lineId}`);
+        // 本人証明書を付けて POST で送る
+        const response = await postToGas(GAS_API_URL, { lineId: lineId });
         const json = await response.json();
-        const matrix = json.data; 
+        if (isAuthError(json)) return;
+        const matrix = json.data;
 
         if (!matrix || matrix.length === 0) {
             throw new Error("データが空か、マスタに登録がない可能性があります。");

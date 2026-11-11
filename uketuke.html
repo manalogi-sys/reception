@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>受付票アップロード</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="rm-auth.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #eef3f5; padding: 15px; color: #333; margin: 0; position: relative; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(44, 62, 80, 0.06); }
@@ -273,15 +274,14 @@ async function uploadImages() {
             files: filesToSend
         };
         
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'text/plain'
-            },
-            body: JSON.stringify(payload)
-        });
-        
+        // 本人証明書を付けて POST で送り、GASの返事を確かめる(本人確認できないときは入り直す)
+        const response = await postToGas(GAS_URL, payload);
+        const result = await response.json();
+        if (isAuthError(result)) return;
+        if (result.status !== "success") {
+            throw new Error(result.message || "保存できませんでした。");
+        }
+
         showCompletionBanner();
         
         document.getElementById('file1').value = '';
