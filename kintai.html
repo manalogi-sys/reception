@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>勤怠</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <style>
+    :root { --navy:#1f3a5f; --gold:#c9a227; --bg:#f4f6f9; --ok:#2e7d32; --ng:#c62828; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:#222; }
+    header { background:var(--navy); color:#fff; padding:calc(14px + env(safe-area-inset-top)) 16px 14px; display:flex; align-items:center; gap:12px; border-bottom:3px solid var(--gold); }
+    header h1 { margin:0; font-size:18px; }
+    header .sub { font-size:12px; opacity:.8; margin-top:2px; }
+    .back { color:#fff; text-decoration:none; font-size:28px; line-height:1; display:none; padding-right:4px; }
+    main { padding:16px; max-width:480px; margin:0 auto; }
+    .card { background:#fff; border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    .who { font-size:20px; font-weight:bold; }
+    .state { display:inline-block; margin-top:6px; padding:4px 12px; border-radius:999px; font-size:14px; background:#e3e8ef; }
+    .state.work { background:#e8f5e9; color:var(--ok); }
+    .state.break { background:#fff8e1; color:#b26a00; }
+    .clock { font-size:36px; font-weight:bold; text-align:center; margin:4px 0 2px; letter-spacing:1px; }
+    .places { display:flex; gap:10px; margin-bottom:12px; }
+    .places label { flex:1; border:2px solid #cfd6df; border-radius:10px; padding:12px; text-align:center; font-size:16px; }
+    .places input { display:none; }
+    .places input:checked + span { color:var(--navy); font-weight:bold; }
+    .places label.on { border-color:var(--navy); background:#eef3f9; }
+    .btns { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    button { font-size:17px; padding:18px 6px; border:none; border-radius:12px; background:var(--navy); color:#fff; font-weight:bold; }
+    button.out { background:#5d6b7a; }
+    button:disabled { background:#d5dbe2; color:#8a94a0; }
+    .msg { text-align:center; font-size:15px; min-height:22px; margin-top:12px; }
+    .msg.ok { color:var(--ok); } .msg.ng { color:var(--ng); }
+    ul { list-style:none; padding:0; margin:0; }
+    li { padding:6px 0; border-bottom:1px solid #eef0f3; font-size:15px; display:flex; justify-content:space-between; }
+    .muted { color:#7a8591; font-size:13px; }
+    .note { color:var(--ng); font-size:13px; margin-top:6px; }
+    .test { background:#fff3cd; color:#7a5b00; font-size:13px; padding:8px 10px; border-radius:8px; margin-bottom:12px; }
+    #linkBox { display:none; text-align:center; font-size:15px; line-height:1.9; font-weight:bold; }
+  </style>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="rm-auth.js"></script>
+  <script src="rm-app.js"></script>
+</head>
+<body>
+  <header><a class="back" id="back" href="./">‹</a><div><h1>勤怠の打刻</h1><div class="sub" id="sub">読み込み中…</div></div></header>
+  <main>
+    <div class="test" id="notice" style="display:none"></div>
+    <div class="card" id="linkBox"></div>
+    <div id="punchArea">
+      <div class="card">
+        <div class="who" id="who">　</div>
+        <div class="state" id="state">　</div>
+        <div class="clock" id="clock">--:--</div>
+      </div>
+      <div class="card">
+        <div class="places" id="places" style="display:none"></div>
+        <div class="btns">
+          <button id="b-出勤" onclick="punch('出勤')" disabled>出勤</button>
+          <button id="b-退勤" class="out" onclick="punch('退勤')" disabled>退勤</button>
+          <button id="b-休憩に入る" onclick="punch('休憩に入る')" disabled>休憩に入る</button>
+          <button id="b-休憩から戻る" onclick="punch('休憩から戻る')" disabled>休憩から戻る</button>
+        </div>
+        <div class="msg" id="msg"></div>
+      </div>
+      <div class="card">
+        <div class="muted">今日の記録</div>
+        <ul id="today"><li class="muted">まだありません</li></ul>
+        <div class="muted" style="margin-top:10px">今月の合計（退勤まで済んだ分）: <b id="month">0</b> 時間</div>
+        <div id="notes"></div>
+      </div>
+    </div>
+  </main>
+  <script>
+    // 勤怠の画面(2026-11-15 店舗担当ターニャ)。開き方は3通り:
+    //  1) ホーム画面アプリから(連携済み): 端末の鍵で送る(rm-app.js)
+    //  2) LINEで ?link=合言葉 付きで開かれた(連携ページ): LINEで本人確認して合言葉をGASに届けるだけ
+    //  3) LINEの中(LIFF)・Safari: LINEの本人証明書で送る(rm-auth.js)
+    let mode = "liff";
+    let current = null, busy = false;
+    function tick() {
+      const d = new Date();
+      document.getElementById("clock").textContent = d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+    setInterval(tick, 10000); tick();
+
+    function call(payload, done) {
+      function neterr() { done({ status: "error", message: "通信できませんでした。電波のよいところでもう一度押してください。" }); }
+      if (mode === "app") {
+        payload.appToken = AppAuth.getToken();
+        AppAuth.postGas(payload).then(function (d) {
+          if (d && d.status === "auth_error") { alert("この端末の連携が切れました。もう一度「LINEと連携する」を押してください。"); AppAuth.relink(); return; }
+          done(d);
+        }).catch(neterr);
+        return;
+      }
+      postToGas(RM_APP.KINTAI_GAS_URL, payload).then(function (r) { return r.json(); }).then(function (d) {
+        if (isAuthError(d)) { busy = false; return; }
+        done(d);
+      }).catch(neterr);
+    }
+    function render(s) {
+      busy = false;
+      const msg = document.getElementById("msg");
+      if (!s || s.status !== "success") {
+        msg.className = "msg ng"; msg.textContent = (s && s.message) || "エラーが起きました";
+        if (current) setButtons(current); else document.getElementById("sub").textContent = "開けませんでした";
+        return;
+      }
+      current = s;
+      const nt = document.getElementById("notice"); nt.textContent = s.notice || ""; nt.style.display = s.notice ? "block" : "none";
+      document.getElementById("sub").textContent = new Date().toLocaleDateString("ja-JP", { month: "long", day: "numeric", weekday: "short" });
+      document.getElementById("who").textContent = s.name + " さん";
+      const st = document.getElementById("state");
+      st.className = "state " + s.state;
+      st.textContent = s.stateLabel + (s.place && s.places.length > 1 ? "(" + s.place + ")" : "");
+      const pl = document.getElementById("places");
+      if (s.places.length > 1 && s.state === "off") {
+        const keep = (pl.querySelector("input:checked") || {}).value;
+        pl.innerHTML = s.places.map(function (p) {
+          return '<label class="' + (keep === p ? "on" : "") + '"><input type="radio" name="place" value="' + p + '"' + (keep === p ? " checked" : "") + '><span>' + p + '</span></label>';
+        }).join("");
+        pl.querySelectorAll("input").forEach(function (i) { i.onchange = function () {
+          pl.querySelectorAll("label").forEach(function (l) { l.classList.remove("on"); }); i.parentNode.classList.add("on"); }; });
+        pl.style.display = "flex";
+      } else { pl.style.display = "none"; }
+      setButtons(s);
+      msg.className = "msg ok"; msg.textContent = s.message || "";
+      const ul = document.getElementById("today");
+      ul.innerHTML = s.today.length ? s.today.map(function (e) {
+        return "<li><span>" + e.kind + (e.place && s.places.length > 1 ? "(" + e.place + ")" : "") + "</span><b>" + e.time + "</b></li>"; }).join("")
+        : '<li class="muted">まだありません</li>';
+      document.getElementById("month").textContent = s.monthHours;
+      document.getElementById("notes").innerHTML = (s.notes || []).map(function (n) { return '<div class="note">' + n + "</div>"; }).join("");
+    }
+    function setButtons(s) {
+      ["出勤", "退勤", "休憩に入る", "休憩から戻る"].forEach(function (k) {
+        document.getElementById("b-" + k).disabled = busy || s.allowed.indexOf(k) < 0;
+      });
+    }
+    function punch(kind) {
+      if (busy || !current) return;
+      let place = "";
+      if (kind === "出勤" && current.places.length > 1) {
+        const c = document.querySelector("#places input:checked");
+        if (!c) { const m = document.getElementById("msg"); m.className = "msg ng"; m.textContent = "先に働く場所を選んでください"; return; }
+        place = c.value;
+      }
+      busy = true; setButtons(current);
+      const m = document.getElementById("msg"); m.className = "msg"; m.textContent = "記録しています…";
+      call({ action: "punch", kind: kind, place: place }, render);
+    }
+    function showLink(html, color, withClose) {
+      document.getElementById("punchArea").style.display = "none";
+      const box = document.getElementById("linkBox");
+      box.style.display = "block"; box.style.color = color || "#2d3748";
+      box.innerHTML = html + (withClose ? '<br><button style="margin-top:18px;width:100%" onclick="liff.closeWindow()">この画面を閉じる</button>' : "");
+      document.getElementById("sub").textContent = "RMアプリとの連携";
+    }
+    // 2) 連携ページ
+    function runLinkMode(linkCode) {
+      showLink("LINEと連携しています…");
+      liff.init({ liffId: RM_APP.KINTAI_LIFF_ID }).then(function () {
+        if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.origin + location.pathname + "?link=" + linkCode }); return; }
+        return AppAuth.postGas({ action: "link_complete", linkCode: linkCode, idToken: liff.getIDToken() }).then(function (d) {
+          if (d.status === "success") showLink("✅ 連携が完了しました。<br><br>ホーム画面の<br>「RM」アプリに戻ってください。", "#22543d", liff.isInClient());
+          else showLink(d.message || "連携に失敗しました。<br>アプリに戻って、もう一度「LINEと連携する」を押してください。", "#c53030", liff.isInClient());
+        });
+      }).catch(function () { showLink("LINEの認証に失敗しました。<br>アプリに戻って、もう一度「LINEと連携する」を押してください。", "#c53030"); });
+    }
+
+    (function start() {
+      const linkCode = AppAuth.getLinkCodeFromUrl();
+      if (linkCode) { runLinkMode(linkCode); return; }
+      const app = AppAuth.startPage();
+      if (app.mode === "redirect") return;
+      if (app.mode === "app") {
+        mode = "app";
+        document.getElementById("back").style.display = "block";
+        call({ action: "state" }, render);
+        return;
+      }
+      // 3) LINEの中・Safari
+      liff.init({ liffId: RM_APP.KINTAI_LIFF_ID }).then(function () {
+        if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+        call({ action: "state" }, render);
+      }).catch(function () { render({ status: "error", message: "LINEの準備ができませんでした。開き直してください。" }); });
+    })();
+  </script>
+</body>
+</html>
