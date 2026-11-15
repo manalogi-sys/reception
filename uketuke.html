@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>受付票アップロード</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="rm-auth.js"></script>
+    <script src="rm-auth.js?v=20261115"></script>
+    <script src="rm-app.js?v=20261115"></script>
     <style>
         body { font-family: sans-serif; background-color: #eef3f5; padding: 15px; color: #333; margin: 0; position: relative; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(44, 62, 80, 0.06); }
@@ -157,6 +158,10 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbyLablfy4U1oaCYUHhr1Yur
 let globalLineId = null;
 
 window.onload = function() {
+    // ホーム画面アプリから開いたとき(段階2): LIFFを使わず、端末の鍵で送る(rm-app.js / rm-auth.js)
+    const rmApp = AppAuth.startPage();
+    if (rmApp.mode === "redirect") return;
+    if (rmApp.mode === "app") { AppAuth.showBackLink(); globalLineId = rmApp.lineId; return; }
     liff.init({ liffId: "2010292787-nAxhQtMo" })
         .then(() => {
             if (liff.isLoggedIn()) {

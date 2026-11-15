@@ -143,7 +143,8 @@
         }
     </style>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="rm-auth.js"></script>
+    <script src="rm-auth.js?v=20261115"></script>
+    <script src="rm-app.js?v=20261115"></script>
 </head>
 <body>
 
@@ -169,6 +170,10 @@
         let currentImages = {}; 
 
         window.onload = function() {
+            // ホーム画面アプリから開いたとき(段階2): LIFFを使わず、端末の鍵で送る(rm-app.js / rm-auth.js)
+            const rmApp = AppAuth.startPage();
+            if (rmApp.mode === "redirect") return;
+            if (rmApp.mode === "app") { AppAuth.showBackLink(); userLineId = rmApp.lineId; return; }
             liff.init({ liffId: LIFF_ID }).then(() => {
                 if (liff.isLoggedIn()) {
                     liff.getProfile().then(profile => {
