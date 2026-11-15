@@ -19,8 +19,8 @@
 const RM_APP = {
     // 勤怠のGAS(連携の受付も兼ねる)
     KINTAI_GAS_URL: "https://script.google.com/macros/s/AKfycbzEkPHBAvr44Rb4yF6swlaxyJQVHKZuPAFB9HO0N50xvDuDXUS3Sqa4vTT6ry6gY3XK/exec",
-    // 勤怠のLIFF(エンドポイント kintai.html)。新井さんがLINE Developersで足したら入れる
-    KINTAI_LIFF_ID: "",
+    // 勤怠のLIFF(エンドポイント kintai.html。11/15 新井さんが足した)
+    KINTAI_LIFF_ID: "2010292787-8c2mK2Yx",
     // 今の6画面のLIFF(段階1では、トップページのボタンからLINEで開く)
     LIFF: {
         uketuke: "2010292787-nAxhQtMo",       // 受付票保存
