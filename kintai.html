@@ -158,7 +158,7 @@
       const box = document.getElementById("linkBox");
       box.style.display = "block"; box.style.color = color || "#2d3748";
       box.innerHTML = html + (withClose ? '<br><button style="margin-top:18px;width:100%" onclick="liff.closeWindow()">この画面を閉じる</button>' : "");
-      document.getElementById("sub").textContent = "RMアプリとの連携";
+      document.getElementById("sub").textContent = "Manabi.アプリとの連携";
     }
     // 2) 連携ページ
     function runLinkMode(linkCode) {
@@ -166,7 +166,7 @@
       liff.init({ liffId: RM_APP.KINTAI_LIFF_ID }).then(function () {
         if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.origin + location.pathname + "?link=" + linkCode }); return; }
         return AppAuth.postGas({ action: "link_complete", linkCode: linkCode, idToken: liff.getIDToken() }).then(function (d) {
-          if (d.status === "success") showLink("✅ 連携が完了しました。<br><br>ホーム画面の<br>「RM」アプリに戻ってください。", "#22543d", liff.isInClient());
+          if (d.status === "success") showLink("✅ 連携が完了しました。<br><br>ホーム画面の<br>「Manabi.」アプリに戻ってください。", "#22543d", liff.isInClient());
           else showLink(d.message || "連携に失敗しました。<br>アプリに戻って、もう一度「LINEと連携する」を押してください。", "#c53030", liff.isInClient());
         });
       }).catch(function () { showLink("LINEの認証に失敗しました。<br>アプリに戻って、もう一度「LINEと連携する」を押してください。", "#c53030"); });
