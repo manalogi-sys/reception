@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>RM</title>
+    <!-- ホーム画面のアプリ「RM」のトップページ(2026-11-15 店舗担当ターニャ)。
+         LINEのリッチメニュー(6つ)はそのまま。こちらは別のデザインで7つ。 -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RM">
+    <meta name="theme-color" content="#1f3a5f">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <script src="rm-app.js"></script>
+    <style>
+        :root { --navy:#1f3a5f; --gold:#c9a227; --bg:#f4f6f9; }
+        * { box-sizing:border-box; }
+        body { margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:#222; }
+        header { background:var(--navy); color:#fff; padding:calc(14px + env(safe-area-inset-top)) 16px 14px; border-bottom:3px solid var(--gold); }
+        header h1 { margin:0; font-size:20px; letter-spacing:1px; }
+        header .sub { font-size:12px; opacity:.8; margin-top:2px; }
+        main { padding:16px; max-width:520px; margin:0 auto; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .tile { display:flex; flex-direction:column; justify-content:center; min-height:96px; background:#fff; border-radius:14px; padding:14px;
+                text-decoration:none; color:var(--navy); box-shadow:0 1px 3px rgba(0,0,0,.08); border-left:5px solid #cfd6df; }
+        .tile b { font-size:17px; }
+        .tile span { font-size:12px; color:#7a8591; margin-top:4px; }
+        .tile.main { grid-column:1 / -1; background:var(--navy); color:#fff; border-left-color:var(--gold); min-height:84px; }
+        .tile.main span { color:#d9e2ec; }
+        #linkPanel { display:none; text-align:center; background:#fff; border-radius:14px; padding:22px 16px; }
+        #linkPanel p { font-size:15px; line-height:1.8; margin:0 0 16px; }
+        .link-btn { width:100%; background:#06c755; color:#fff; border:none; padding:16px; font-size:17px; font-weight:bold; border-radius:12px; }
+        .link-btn:disabled { background:#cbd5e0; }
+        #linkStatus { display:none; margin-top:16px; padding:12px; background:#f0fff4; border:1px solid #9ae6b4; border-radius:10px; font-size:14px; line-height:1.7; }
+        #linkStatus.error { background:#fff5f5; border-color:#feb2b2; color:#c53030; }
+        .retry-link { display:inline-block; margin-top:10px; color:#3182ce; text-decoration:underline; }
+        #installHint { display:none; background:#fff8e1; border-radius:12px; padding:12px 14px; font-size:13px; line-height:1.7; margin-bottom:14px; color:#6b5200; }
+        .note { font-size:12px; color:#7a8591; margin-top:14px; line-height:1.6; }
+    </style>
+</head>
+<body>
+    <header><h1>RM</h1><div class="sub">買取大吉 名古屋錦店 スタッフ用</div></header>
+    <main>
+        <div id="installHint">
+            <b>ホーム画面に置くと、アプリのように使えます。</b><br>
+            iPhone: 下の共有ボタン（□に↑）→「ホーム画面に追加」<br>
+            Android: 右上の︙ →「ホーム画面に追加」
+        </div>
+
+        <!-- 連携画面:ホーム画面から初めて開いたときだけ出す(最初の1回だけLINEと連携する) -->
+        <div id="linkPanel">
+            <p>はじめに、<b>LINEと連携</b>してください。<br>（最初の1回だけです）</p>
+            <button class="link-btn" id="linkBtn" onclick="startLink()">LINEと連携する</button>
+            <div id="linkStatus"></div>
+        </div>
+
+        <div id="menu">
+            <div class="grid">
+                <a class="tile main" href="kintai.html"><b>勤怠</b><span>出勤・休憩・退勤</span></a>
+                <a class="tile" data-liff="uketuke" href="#"><b>受付票保存</b><span>LINEで開きます</span></a>
+                <a class="tile" data-liff="raitenrireki" href="#"><b>顧客履歴検索</b><span>LINEで開きます</span></a>
+                <a class="tile" data-liff="genkin" href="#"><b>現金出納帳</b><span>LINEで開きます</span></a>
+                <a class="tile" data-liff="shukei" href="#"><b>グラフ</b><span>LINEで開きます</span></a>
+                <a class="tile" data-liff="summary" href="#"><b>サマリー</b><span>LINEで開きます</span></a>
+                <a class="tile" data-liff="forauction" href="#"><b>ヤフオク分析</b><span>LINEで開きます</span></a>
+            </div>
+            <div class="note">「LINEで開きます」の画面は、今は LINE のリッチメニューと同じ画面が開きます。順にこのアプリの中で開けるようにします。</div>
+        </div>
+    </main>
+<script>
+// 今の6画面(段階1): LIFFのURLを開く(LINEに移る)。アプリの中で動くようにしたら、ここを画面のファイル名に替える
+document.querySelectorAll("[data-liff]").forEach(function (a) {
+    a.href = "https://liff.line.me/" + RM_APP.LIFF[a.dataset.liff];
+    a.target = "_blank";
+});
+
+if (!AppAuth.isStandalone() && !AppAuth.isInLine()) document.getElementById("installHint").style.display = "block";
+
+let linkTimer = null;
+function showMenu() { document.getElementById("linkPanel").style.display = "none"; document.getElementById("menu").style.display = "block"; }
+function showLinkPanel() { document.getElementById("menu").style.display = "none"; document.getElementById("linkPanel").style.display = "block"; }
+function setStatus(html, isError) {
+    const box = document.getElementById("linkStatus");
+    box.innerHTML = html; box.className = isError ? "error" : ""; box.style.display = "block";
+}
+function startLink() { if (AppAuth.beginLink()) waitForLink(); }
+function waitForLink() {
+    document.getElementById("linkBtn").disabled = true;
+    setStatus("LINEの画面で連携しています。<br>「連携が完了しました」と出たら、<b>この「RM」アプリに戻って</b>ください。<br>" +
+              '<span class="retry-link" onclick="resetLink()">うまくいかないときは、やり直す</span>');
+    if (linkTimer) clearInterval(linkTimer);
+    linkTimer = setInterval(pollLink, 3000);
+    pollLink();
+}
+async function pollLink() {
+    let result;
+    try { result = await AppAuth.checkLink(); } catch (e) { return; }
+    if (result === "waiting") return;
+    clearInterval(linkTimer); linkTimer = null;
+    if (result === "linked") { showMenu(); return; }
+    document.getElementById("linkBtn").disabled = false;
+    if (result === "none") setStatus("時間が経ったため、連携をやり直してください。<br>もう一度「LINEと連携する」を押してください。", true);
+    else setStatus(result + '<br><span class="retry-link" onclick="resetLink()">やり直す</span>', true);
+}
+function resetLink() {
+    if (linkTimer) clearInterval(linkTimer);
+    linkTimer = null;
+    document.getElementById("linkBtn").disabled = false;
+    document.getElementById("linkStatus").style.display = "none";
+}
+document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && linkTimer) pollLink(); });
+
+if (AppAuth.isStandalone() && !AppAuth.getToken()) {
+    showLinkPanel();
+    if (AppAuth.getPending()) waitForLink(); // 連携の途中でアプリが閉じられていた場合は、続きから待つ
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "RM スタッフ用",
+  "short_name": "RM",
+  "description": "買取大吉 名古屋錦店のスタッフ用。勤怠と、受付票保存・顧客履歴検索などの入口",
+  "start_url": "/reception/",
+  "scope": "/reception/",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#1f3a5f",
+  "lang": "ja",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
