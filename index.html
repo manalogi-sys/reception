@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>RM</title>
+    <title>Manabi.</title>
     <!-- ホーム画面のアプリ「RM」のトップページ(2026-11-15 店舗担当ターニャ)。
          LINEのリッチメニュー(6つ)はそのまま。こちらは別のデザインで7つ。 -->
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RM">
+    <meta name="apple-mobile-web-app-title" content="Manabi.">
     <meta name="theme-color" content="#1f3a5f">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -42,7 +42,7 @@
     </style>
 </head>
 <body>
-    <header><h1>RM</h1><div class="sub">買取大吉 名古屋錦店 スタッフ用</div></header>
+    <header><h1>Manabi.</h1><div class="sub">店舗・倉庫スタッフ用</div></header>
     <main>
         <div id="installHint">
             <b>ホーム画面に置くと、アプリのように使えます。</b><br>
@@ -100,7 +100,7 @@ function setStatus(html, isError) {
 function startLink() { if (AppAuth.beginLink()) waitForLink(); }
 function waitForLink() {
     document.getElementById("linkBtn").disabled = true;
-    setStatus("LINEの画面で連携しています。<br>「連携が完了しました」と出たら、<b>この「RM」アプリに戻って</b>ください。<br>" +
+    setStatus("LINEの画面で連携しています。<br>「連携が完了しました」と出たら、<b>この「Manabi.」アプリに戻って</b>ください。<br>" +
               '<span class="retry-link" onclick="resetLink()">うまくいかないときは、やり直す</span>');
     if (linkTimer) clearInterval(linkTimer);
     linkTimer = setInterval(pollLink, 3000);

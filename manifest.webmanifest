@@ -1,7 +1,7 @@
 {
-  "name": "RM スタッフ用",
-  "short_name": "RM",
-  "description": "買取大吉 名古屋錦店のスタッフ用。勤怠と、受付票保存・顧客履歴検索などの入口",
+  "name": "Manabi.",
+  "short_name": "Manabi.",
+  "description": "店舗・倉庫スタッフ用。勤怠と、受付票保存・顧客履歴検索などの入口",
   "start_url": "/reception/",
   "scope": "/reception/",
   "display": "standalone",

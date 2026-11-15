@@ -71,7 +71,7 @@ const AppAuth = (() => {
         const a = document.createElement("a");
         a.href = "./";
         a.textContent = "‹ メニュー";
-        a.setAttribute("aria-label", "RMのメニューに戻る");
+        a.setAttribute("aria-label", "Manabi.のメニューに戻る");
         a.style.cssText = "position:fixed;left:10px;top:calc(8px + env(safe-area-inset-top));z-index:99999;" +
             "background:rgba(31,58,95,.92);color:#fff;font:bold 14px/1 -apple-system,'Hiragino Sans',sans-serif;" +
             "padding:9px 12px;border-radius:18px;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,.25);";
