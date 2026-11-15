@@ -14,7 +14,7 @@
     <meta name="theme-color" content="#1f3a5f">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-    <script src="rm-app.js"></script>
+    <script src="rm-app.js?v=20261115"></script>
     <style>
         :root { --navy:#1f3a5f; --gold:#c9a227; --bg:#f4f6f9; }
         * { box-sizing:border-box; }
@@ -60,22 +60,33 @@
         <div id="menu">
             <div class="grid">
                 <a class="tile main" href="kintai.html"><b>勤怠</b><span>出勤・休憩・退勤</span></a>
-                <a class="tile" data-liff="uketuke" href="#"><b>受付票保存</b><span>LINEで開きます</span></a>
-                <a class="tile" data-liff="raitenrireki" href="#"><b>顧客履歴検索</b><span>LINEで開きます</span></a>
-                <a class="tile" data-liff="genkin" href="#"><b>現金出納帳</b><span>LINEで開きます</span></a>
-                <a class="tile" data-liff="shukei" href="#"><b>グラフ</b><span>LINEで開きます</span></a>
-                <a class="tile" data-liff="summary" href="#"><b>サマリー</b><span>LINEで開きます</span></a>
-                <a class="tile" data-liff="forauction" href="#"><b>ヤフオク分析</b><span>LINEで開きます</span></a>
+                <a class="tile" data-liff="uketuke" href="#"><b>受付票保存</b><span data-app="受付票の写真を保存">LINEで開きます</span></a>
+                <a class="tile" data-liff="raitenrireki" href="#"><b>顧客履歴検索</b><span data-app="お客様の来店履歴">LINEで開きます</span></a>
+                <a class="tile" data-liff="genkin" href="#"><b>現金出納帳</b><span data-app="入金・出金の記帳">LINEで開きます</span></a>
+                <a class="tile" data-liff="shukei" href="#"><b>グラフ</b><span data-app="期間を選んでグラフ">LINEで開きます</span></a>
+                <a class="tile" data-liff="summary" href="#"><b>サマリー</b><span data-app="本日の買取">LINEで開きます</span></a>
+                <a class="tile" data-liff="forauction" href="#"><b>ヤフオク分析</b><span data-app="写真からAIで分析">LINEで開きます</span></a>
             </div>
-            <div class="note">「LINEで開きます」の画面は、今は LINE のリッチメニューと同じ画面が開きます。順にこのアプリの中で開けるようにします。</div>
+            <div class="note" id="menuNote">「LINEで開きます」の画面は、LINE のリッチメニューと同じ画面が開きます。ホーム画面に置いたアプリから開くと、アプリの中で開きます。</div>
         </div>
     </main>
 <script>
-// 今の6画面(段階1): LIFFのURLを開く(LINEに移る)。アプリの中で動くようにしたら、ここを画面のファイル名に替える
+// 今の6画面(2026-11-15 段階2): ホーム画面アプリから開いたときは、アプリの中の画面(uketuke.html など)を開く。
+// SafariやLINEから開いたときは、これまでどおりLIFFのURL(LINEで開く)。
+// 戻すとき: 下の inApp を false にすれば、段階1と同じ(全部LINEで開く)になる。
+const inApp = AppAuth.isStandalone();
 document.querySelectorAll("[data-liff]").forEach(function (a) {
-    a.href = "https://liff.line.me/" + RM_APP.LIFF[a.dataset.liff];
-    a.target = "_blank";
+    if (inApp) {
+        a.href = a.dataset.liff + ".html";
+        a.removeAttribute("target");
+        const sub = a.querySelector("span");
+        if (sub && sub.dataset.app) sub.textContent = sub.dataset.app;
+    } else {
+        a.href = "https://liff.line.me/" + RM_APP.LIFF[a.dataset.liff];
+        a.target = "_blank";
+    }
 });
+if (inApp) document.getElementById("menuNote").style.display = "none";
 
 if (!AppAuth.isStandalone() && !AppAuth.isInLine()) document.getElementById("installHint").style.display = "block";
 

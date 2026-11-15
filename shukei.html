@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>来客データ状況ダッシュボード</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="rm-auth.js"></script>
+  <script src="rm-auth.js?v=20261115"></script>
+  <script src="rm-app.js?v=20261115"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <style>
@@ -218,6 +219,11 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       Chart.register(ChartDataLabels);
+
+      // ホーム画面アプリから開いたとき(段階2): LIFFを使わず、端末の鍵で送る(rm-app.js / rm-auth.js)
+      const rmApp = AppAuth.startPage();
+      if (rmApp.mode === "redirect") return;
+      if (rmApp.mode === "app") { AppAuth.showBackLink(); userId = rmApp.lineId; toggleCheckboxes(); return; }
 
       liff.init({ liffId: "2010292787-uHHgSxXo" })
         .then(() => {

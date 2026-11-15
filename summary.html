@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>本日の買取サマリー</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="rm-auth.js"></script>
+    <script src="rm-auth.js?v=20261115"></script>
+    <script src="rm-app.js?v=20261115"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -185,6 +186,10 @@ function formatGoogleDate(dateStr) {
 }
 
 async function initializeLiff() {
+    // ホーム画面アプリから開いたとき(段階2): LIFFを使わず、端末の鍵で送る(rm-app.js / rm-auth.js)
+    const rmApp = AppAuth.startPage();
+    if (rmApp.mode === "redirect") return;
+    if (rmApp.mode === "app") { AppAuth.showBackLink(); await fetchSummary(rmApp.lineId); return; }
     try {
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) {

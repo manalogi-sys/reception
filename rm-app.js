@@ -14,7 +14,8 @@
 //
 // ・LINEのリッチメニューから開いたときは、これまでどおりLIFF(LINEログイン)を使う。
 //   この部品が働くのは「ホーム画面から全画面で開いたとき」だけ。
-// ・今の6画面(uketuke など)はまだこの部品を読み込んでいない(段階2で1つずつ対応する)。
+// ・今の6画面(uketuke など)も 2026-11-15 段階2でこの部品を読み込むようにした。
+//   ホーム画面から開いたときだけ、rm-auth.js が鍵を付けて送る。LINEの中では今までどおりLIFF。
 // =================================================================
 const RM_APP = {
     // 勤怠のGAS(連携の受付も兼ねる)
@@ -62,6 +63,23 @@ const AppAuth = (() => {
         if (!isStandalone()) return { mode: "liff" };
         if (!getToken()) { location.replace("./"); return { mode: "redirect" }; }
         return { mode: "app", lineId: getLineId() };
+    }
+
+    // ホーム画面アプリには戻るボタンが無いので、左上に「‹ メニュー」を出す(今の6画面用)。
+    // <button> にしないこと(現金出納帳は document.querySelector('button') で送信ボタンを探しているため)
+    function showBackLink() {
+        const a = document.createElement("a");
+        a.href = "./";
+        a.textContent = "‹ メニュー";
+        a.setAttribute("aria-label", "RMのメニューに戻る");
+        a.style.cssText = "position:fixed;left:10px;top:calc(8px + env(safe-area-inset-top));z-index:99999;" +
+            "background:rgba(31,58,95,.92);color:#fff;font:bold 14px/1 -apple-system,'Hiragino Sans',sans-serif;" +
+            "padding:9px 12px;border-radius:18px;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,.25);";
+        // ボタンが画面の見出しに重ならないよう、ページの頭に同じ高さの余白を入れる(ホーム画面から開いたときだけ)
+        const spacer = document.createElement("div");
+        spacer.style.cssText = "height:calc(44px + env(safe-area-inset-top));";
+        const add = function () { document.body.insertBefore(spacer, document.body.firstChild); document.body.appendChild(a); };
+        if (document.body) add(); else document.addEventListener("DOMContentLoaded", add);
     }
 
     // 鍵が使えなくなったとき(シートから消された等):鍵を消して連携画面へ
@@ -132,6 +150,6 @@ const AppAuth = (() => {
         return res.json();
     }
 
-    return { isStandalone, isInLine, isAppMode, getToken, getLineId, startPage, relink,
+    return { isStandalone, isInLine, isAppMode, getToken, getLineId, startPage, showBackLink, relink,
              beginLink, getPending, checkLink, getLinkCodeFromUrl, postGas };
 })();
